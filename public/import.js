@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Import Listini</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+    :root {
+      --bg: #0f1117;
+      --surface: #181c27;
+      --border: #2a2f3e;
+      --accent: #4af0a0;
+      --accent-dim: rgba(74,240,160,0.12);
+      --accent-glow: rgba(74,240,160,0.3);
+      --danger: #ff5c5c;
+      --danger-dim: rgba(255,92,92,0.12);
+      --warn: #fbbf24;
+      --text: #e8eaf0;
+      --muted: #6b7280;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'IBM Plex Sans', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 60px;
+    }
+
+    /* Griglia sfondo */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(74,240,160,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(74,240,160,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 620px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* HEADER */
+    .page-header {
+      margin-bottom: 36px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .page-title {
+      font-family: var(--mono);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .page-title span {
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .back-link {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .back-link:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    /* CARD */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      margin-bottom: 16px;
+    }
+
+    .card-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    /* DROP ZONE */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon {
+      font-size: 2.4rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .drop-text {
+      font-size: 0.95rem;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .drop-sub {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* FILE SELEZIONATO */
+    .file-selected {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-top: 14px;
+    }
+
+    .file-selected.visible { display: flex; }
+
+    .file-icon { font-size: 1.4rem; }
+
+    .file-info { flex: 1; }
+
+    .file-name {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: 600;
+      word-break: break-all;
+    }
+
+    .file-size {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .btn-clear {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 4px;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+
+    .btn-clear:hover { color: var(--danger); }
+
+    /* PREVIEW FORNITORE */
+    .preview-box {
+      display: none;
+      margin-top: 14px;
+    }
+
+    .preview-box.visible { display: block; }
+
+    .preview-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1e2330;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+    }
+
+    .preview-label {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+    }
+
+    .preview-value {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      color: var(--warn);
+      font-weight: 600;
+    }
+
+    .preview-count {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    /* BOTTONE IMPORT */
+    .btn-import {
+      width: 100%;
+      background: var(--accent);
+      color: #0a0e14;
+      border: none;
+      border-radius: 10px;
+      padding: 16px;
+      font-family: var(--mono);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 20px;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-import:hover:not(:disabled) {
+      background: #6af5b0;
+      box-shadow: 0 0 24px var(--accent-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-import:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* LOG CONSOLE */
+    .log-card { display: none; }
+    .log-card.visible { display: block; }
+
+    .log-console {
+      background: #0a0e14;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      line-height: 1.8;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .log-line { display: flex; gap: 10px; }
+    .log-time { color: var(--muted); white-space: nowrap; }
+    .log-msg.ok    { color: var(--accent); }
+    .log-msg.info  { color: var(--text); }
+    .log-msg.warn  { color: var(--warn); }
+    .log-msg.error { color: var(--danger); }
+
+    /* PROGRESS BAR */
+    .progress-wrap {
+      background: var(--border);
+      border-radius: 4px;
+      height: 4px;
+      margin-top: 16px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-wrap.visible { display: block; }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 8px var(--accent-glow);
+      width: 0%;
+    }
+
+    /* RISULTATO FINALE */
+    .result-banner {
+      display: none;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 16px;
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .result-banner.visible { display: flex; }
+    .result-banner.success { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); }
+    .result-banner.error   { background: var(--danger-dim); border: 1px solid var(--danger); color: var(--danger); }
+
+    .result-icon { font-size: 1.3rem; }
+
+    /* RESPONSIVE */
+    @media (max-width: 480px) {
+      .page-title { font-size: 1.2rem; }
+      .card { padding: 20px; }
+      .drop-zone { padding: 30px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="page-header">
+    <div class="page-title">// import<span>_listini</span></div>
+    <a href="index.html" class="back-link">← torna alla ricerca</a>
+  </div>
+
+  <!-- CARD UPLOAD -->
+  <div class="card">
+    <div class="card-label">01 — Seleziona file Excel</div>
+
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" id="file-input" accept=".xlsx,.xls">
+      <span class="drop-icon">📂</span>
+      <div class="drop-text">Trascina il file Excel qui</div>
+      <div class="drop-sub">oppure clicca per selezionare · .xlsx / .xls</div>
+    </div>
+
+    <div class="file-selected" id="file-selected">
+      <span class="file-icon">📊</span>
+      <div class="file-info">
+        <div class="file-name" id="file-name">—</div>
+        <div class="file-size" id="file-size">—</div>
+      </div>
+      <button class="btn-clear" onclick="clearFile()" title="Rimuovi file">✕</button>
+    </div>
+
+    <div class="preview-box" id="preview-box">
+      <div class="preview-row">
+        <span class="preview-label">Fornitore rilevato</span>
+        <span class="preview-value" id="preview-fornitore">—</span>
+        <span class="preview-count" id="preview-count">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD AZIONE -->
+  <div class="card">
+    <div class="card-label">02 — Avvia importazione</div>
+    <p style="font-size:0.85rem; color:var(--muted); line-height:1.6; margin-bottom:4px;">
+      Tutti i record esistenti del fornitore verranno <strong style="color:var(--danger)">eliminati</strong>
+      e sostituiti con i dati del file caricato.
+    </p>
+    <button class="btn-import" id="btn-import" disabled onclick="avviaImport()">
+      <span id="btn-label">⚡ Importa listino</span>
+    </button>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="result-banner" id="result-banner">
+      <span class="result-icon" id="result-icon"></span>
+      <span id="result-text"></span>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="card log-card" id="log-card">
+    <div class="card-label">03 — Log operazione</div>
+    <div class="log-console" id="log-console"></div>
+  </div>
+
+</div>
+
+<script>
+  // ============================================================
+  // CONFIGURAZIONE — stessi valori di index.html
+  // ============================================================
+  const SUPABASE_URL      = 'https://TUO-PROGETTO.supabase.co';  // ← sostituisci
+  const SUPABASE_ANON_KEY = 'eyJ...TUA_ANON_KEY...';             // ← sostituisci
+  // Usa la SERVICE ROLE KEY qui sotto per poter scrivere/cancellare
+  const SUPABASE_SERVICE_KEY = 'eyJ...TUA_SERVICE_ROLE_KEY...';  // ← sostituisci
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+  // ============================================================
+  // STATO
+  // ============================================================
+  let fileData    = null;   // ArrayBuffer del file
+  let prodottiParsati = []; // righe elaborate
+  let fornitoreName = '';
+
+  // ============================================================
+  // DRAG & DROP + INPUT FILE
+  // ============================================================
+  const dropZone  = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+
+  fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  function handleFile(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['xlsx','xls'].includes(ext)) {
+      showResult('error', '❌', 'Formato non supportato. Usa un file .xlsx o .xls');
+      return;
+    }
+
+    // Mostra info file
+    document.getElementById('file-name').textContent = file.name;
+    document.getElementById('file-size').textContent = formatBytes(file.size);
+    document.getElementById('file-selected').classList.add('visible');
+
+    // Leggi e analizza
+    const reader = new FileReader();
+    reader.onload = e => {
+      fileData = e.target.result;
+      parseExcel(fileData);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function clearFile() {
+    fileData = null;
+    prodottiParsati = [];
+    fornitoreName = '';
+    fileInput.value = '';
+    document.getElementById('file-selected').classList.remove('visible');
+    document.getElementById('preview-box').classList.remove('visible');
+    document.getElementById('btn-import').disabled = true;
+    document.getElementById('result-banner').classList.remove('visible');
+    document.getElementById('log-card').classList.remove('visible');
+    document.getElementById('log-console').innerHTML = '';
+  }
+
+  // ============================================================
+  // PARSING EXCEL
+  // ============================================================
+  function parseExcel(buffer) {
+    try {
+      const wb    = XLSX.read(buffer, { type: 'array', cellDates: true });
+      const ws    = wb.Sheets[wb.SheetNames[0]];
+      const righe = XLSX.utils.sheet_to_json(ws, { defval: null });
+
+      if (!righe.length) {
+        showResult('error', '❌', 'Il file sembra vuoto o non ha righe di dati.');
+        return;
+      }
+
+      // Mappa colonne → oggetti DB
+      prodottiParsati = righe.map(r => ({
+        art:                parseStr(r['ART']),
+        descrizione:        parseStr(r['DESCRIZIONE']),
+        um:                 parseStr(r['UM']),
+        prezzo:             parseNum(r['PREZZO']),
+        sconto1:            parseNum(r['SCONTO1']),
+        sconto2:            parseNum(r['SCONTO2']),
+        categoria:          parseStr(r['CAT MERCE']),
+        ean:                parseStr(r['EAN']),
+        fornitore:          parseStr(r['FORNITORE']),
+        data_aggiornamento: parseData(r['DATA ULTIMO AGGIORNAMENTO'])
+      })).filter(p => p.art); // scarta righe senza codice articolo
+
+      // Rileva il fornitore (prima riga non nulla)
+      const primoFornitore = prodottiParsati.find(p => p.fornitore)?.fornitore;
+      if (!primoFornitore) {
+        showResult('error', '❌', 'Colonna FORNITORE non trovata o vuota nel file.');
+        return;
+      }
+
+      fornitoreName = primoFornitore;
+      document.getElementById('preview-fornitore').textContent = fornitoreName;
+      document.getElementById('preview-count').textContent = `${prodottiParsati.length} righe`;
+      document.getElementById('preview-box').classList.add('visible');
+      document.getElementById('btn-import').disabled = false;
+
+    } catch(e) {
+      showResult('error', '❌', `Errore lettura file: ${e.message}`);
+    }
+  }
+
+  // ============================================================
+  // IMPORT
+  // ============================================================
+  async function avviaImport() {
+    if (!prodottiParsati.length || !fornitoreName) return;
+
+    // Reset UI
+    document.getElementById('btn-import').disabled = true;
+    document.getElementById('btn-label').textContent = '⏳ Importazione in corso...';
+    document.getElementById('result-banner').classList.remove('visible');
+    document.getElementById('log-card').classList.add('visible');
+    document.getElementById('log-console').innerHTML = '';
+    setProgress(0);
+
+    log('info', `Avvio importazione per: ${fornitoreName}`);
+    log('info', `Righe da importare: ${prodottiParsati.length}`);
+
+    try {
+      // STEP 1 — Elimina vecchi record
+      log('warn', `Eliminazione vecchi dati di "${fornitoreName}"...`);
+      const { error: delErr } = await sb
+        .from('prodotti')
+        .delete()
+        .eq('fornitore', fornitoreName);
+
+      if (delErr) throw new Error(`Eliminazione fallita: ${delErr.message}`);
+      log('ok', 'Vecchi dati eliminati ✓');
+      setProgress(20);
+
+      // STEP 2 — Inserisci in batch da 500
+      const BATCH = 500;
+      const totale = prodottiParsati.length;
+      let inseriti = 0;
+
+      for (let i = 0; i < totale; i += BATCH) {
+        const batch = prodottiParsati.slice(i, i + BATCH);
+        const { error: insErr } = await sb.from('prodotti').insert(batch);
+        if (insErr) throw new Error(`Inserimento batch fallito: ${insErr.message}`);
+        inseriti += batch.length;
+        const pct = 20 + Math.round((inseriti / totale) * 80);
+        setProgress(pct);
+        log('info', `Inseriti ${inseriti} / ${totale} record...`);
+      }
+
+      setProgress(100);
+      log('ok', `✅ Importazione completata! ${totale} prodotti caricati.`);
+      showResult('success', '✅', `${totale} prodotti di "${fornitoreName}" importati con successo`);
+
+    } catch(e) {
+      log('error', `ERRORE: ${e.message}`);
+      showResult('error', '❌', e.message);
+    } finally {
+      document.getElementById('btn-label').textContent = '⚡ Importa listino';
+      document.getElementById('btn-import').disabled = false;
+    }
+  }
+
+  // ============================================================
+  // HELPERS UI
+  // ============================================================
+  function log(tipo, msg) {
+    const console = document.getElementById('log-console');
+    const now = new Date().toLocaleTimeString('it-IT');
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    line.innerHTML = `<span class="log-time">${now}</span><span class="log-msg ${tipo}">${msg}</span>`;
+    console.appendChild(line);
+    console.scrollTop = console.scrollHeight;
+  }
+
+  function setProgress(pct) {
+    document.getElementById('progress-wrap').classList.add('visible');
+    document.getElementById('progress-bar').style.width = pct + '%';
+  }
+
+  function showResult(tipo, icon, msg) {
+    const banner = document.getElementById('result-banner');
+    banner.className = `result-banner visible ${tipo}`;
+    document.getElementById('result-icon').textContent = icon;
+    document.getElementById('result-text').textContent = msg;
+  }
+
+  // ============================================================
+  // PARSING DATI
+  // ============================================================
+  function parseStr(v) {
+    if (v === null || v === undefined) return null;
+    const s = String(v).trim();
+    return s === '' ? null : s;
+  }
+
+  function parseNum(v) {
+    if (v === null || v === undefined || v === '') return null;
+    const n = parseFloat(String(v).replace(',', '.'));
+    return isNaN(n) ? null : n;
+  }
+
+  function parseData(v) {
+    if (!v) return null;
+    if (v instanceof Date) {
+      return v.toISOString().split('T')[0]; // YYYY-MM-DD
+    }
+    return String(v).trim();
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024*1024)).toFixed(1) + ' MB';
+  }
+</script>
+</body>
+</html>
