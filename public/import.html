@@ -562,10 +562,14 @@
     try {
       // STEP 1 — Elimina vecchi record
       log('warn', `Eliminazione vecchi dati di "${fornitoreName}"...`);
-     const { error: delErr } = await sb
+    const { error: delErr } = await sb
   .from('prodotti')
   .delete()
   .eq('fornitore', fornitoreName);
+
+console.log('DEL ERROR:', JSON.stringify(delErr));
+console.log('FORNITORE:', fornitoreName);
+console.log('URL:', SUPABASE_URL);
 
 // Ignora l'errore se non c'era nulla da cancellare
 if (delErr && !delErr.message.includes('0 rows')) {
