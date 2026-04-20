@@ -422,10 +422,10 @@
   // ============================================================
   // CONFIGURAZIONE — stessi valori di index.html
   // ============================================================
-  const SUPABASE_URL      = 'https://TUO-PROGETTO.supabase.co';  // ← sostituisci
-  const SUPABASE_ANON_KEY = 'eyJ...TUA_ANON_KEY...';             // ← sostituisci
+  const SUPABASE_URL      = 'https://dltokkmmgiqcearzapzf.supabase.co';  // ← sostituisci
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsdG9ra21tZ2lxY2VhcnphcHpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NzE4MjcsImV4cCI6MjA5MjI0NzgyN30.Aokl-GKXauodlJW7SgUBuYVh8l2tzJGm1rnlSFQ5djE';             // ← sostituisci
   // Usa la SERVICE ROLE KEY qui sotto per poter scrivere/cancellare
-  const SUPABASE_SERVICE_KEY = 'eyJ...TUA_SERVICE_ROLE_KEY...';  // ← sostituisci
+  const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsdG9ra21tZ2lxY2VhcnphcHpmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjY3MTgyNywiZXhwIjoyMDkyMjQ3ODI3fQ.nH0V7hZSP_OKsCDJC7begBg4VwAe0GplWhVgedryDtA';  // ← sostituisci
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
