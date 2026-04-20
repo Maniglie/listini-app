@@ -563,9 +563,11 @@
       // STEP 1 — Elimina vecchi record
       log('warn', `Eliminazione vecchi dati di "${fornitoreName}"...`);
       const { error: delErr } = await sb
-        .from('prodotti')
-        .delete()
-        .eq('fornitore', fornitoreName);
+  .from('prodotti')
+  .delete()
+  .filter('fornitore', 'eq', fornitoreName);
+
+if (delErr) throw new Error(`Eliminazione fallita: ${delErr.message}`);
 
       if (delErr) throw new Error(`Eliminazione fallita: ${delErr.message}`);
       log('ok', 'Vecchi dati eliminati ✓');
