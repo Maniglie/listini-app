@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listini Prezzi</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    /* LOGIN */
+    #login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .login-card h1 {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+      color: #1a1a2e;
+    }
+
+    .login-card p {
+      color: #666;
+      margin-bottom: 28px;
+      font-size: 0.9rem;
+    }
+
+    /* INPUTS GLOBALI */
+    input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus { border-color: #4361ee; }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #4361ee;
+      color: white;
+      padding: 14px 24px;
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    .btn-primary:hover { background: #3451d1; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .error-msg {
+      color: #e63946;
+      font-size: 0.875rem;
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* APP PRINCIPALE */
+    #app-screen { display: none; }
+
+    .header {
+      background: white;
+      padding: 16px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header h1 {
+      font-size: 1.2rem;
+      color: #4361ee;
+      white-space: nowrap;
+    }
+
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .search-bar input {
+      flex: 1;
+      padding: 10px 14px;
+      font-size: 1rem;
+    }
+
+    .btn-search {
+      background: #4361ee;
+      color: white;
+      padding: 10px 18px;
+      white-space: nowrap;
+    }
+
+    .btn-search:hover { background: #3451d1; }
+
+    /* CONTENUTO */
+    .content {
+      max-width: 800px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+
+    /* LISTA RISULTATI */
+    .results-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .result-item {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: all 0.15s;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 4px 16px;
+      align-items: center;
+    }
+
+    .result-item:hover {
+      border-color: #4361ee;
+      box-shadow: 0 4px 16px rgba(67,97,238,0.15);
+    }
+
+    .result-art {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #4361ee;
+    }
+
+    .result-desc {
+      font-size: 0.9rem;
+      color: #333;
+      grid-column: 1;
+    }
+
+    .result-meta {
+      font-size: 0.78rem;
+      color: #888;
+      grid-column: 1;
+    }
+
+    .result-price {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      grid-row: 1 / 3;
+      grid-column: 2;
+      text-align: right;
+    }
+
+    /* DETTAGLIO ARTICOLO */
+    .detail-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
+
+    .btn-back {
+      background: #f0f2f5;
+      color: #333;
+      padding: 8px 16px;
+      font-size: 0.875rem;
+      margin-bottom: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-back:hover { background: #e0e4eb; }
+
+    .article-header {
+      border-bottom: 2px solid #f0f2f5;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+
+    .article-code {
+      font-size: 0.85rem;
+      color: #4361ee;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .article-desc {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 10px;
+      line-height: 1.3;
+    }
+
+    .article-meta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .meta-tag {
+      background: #f0f2f5;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      color: #555;
+    }
+
+    .article-update {
+      font-size: 0.75rem;
+      color: #aaa;
+      margin-top: 8px;
+    }
+
+    /* PREZZI */
+    .prezzi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 480px) {
+      .prezzi-grid { grid-template-columns: 1fr; }
+    }
+
+    .prezzo-card {
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .prezzo-card.base {
+      background: #1a1a2e;
+      color: white;
+      grid-column: 1 / -1;
+    }
+
+    .prezzo-card.chn { background: #eef2ff; border: 2px solid #c7d2fe; }
+    .prezzo-card.interventi { background: #fff7ed; border: 2px solid #fed7aa; }
+    .prezzo-card.fabbro { background: #f0fdf4; border: 2px solid #bbf7d0; }
+    .prezzo-card.minimo { background: #fef2f2; border: 2px solid #fecaca; }
+
+    .prezzo-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.7;
+      margin-bottom: 6px;
+    }
+
+    .prezzo-card.base .prezzo-label { color: rgba(255,255,255,0.8); }
+
+    .prezzo-valore {
+      font-size: 1.8rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .prezzo-card.base .prezzo-valore { color: white; font-size: 2rem; }
+    .prezzo-card.chn .prezzo-valore { color: #3730a3; }
+    .prezzo-card.interventi .prezzo-valore { color: #c2410c; }
+    .prezzo-card.fabbro .prezzo-valore { color: #166534; }
+    .prezzo-card.minimo .prezzo-valore { color: #b91c1c; }
+
+    .prezzo-moltiplicatore {
+      font-size: 0.72rem;
+      opacity: 0.6;
+      margin-top: 4px;
+    }
+
+    /* STATO */
+    .stato-msg {
+      text-align: center;
+      padding: 40px 20px;
+      color: #888;
+    }
+
+    .stato-msg .icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .stato-msg p { font-size: 0.95rem; }
+
+    .loading { animation: pulse 1.2s ease-in-out infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .results-count {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>🔒 Listini Prezzi</h1>
+    <p>Inserisci la password per accedere</p>
+    <input type="password" id="pwd-input" placeholder="Password" 
+           onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="btn-primary" onclick="doLogin()">Accedi</button>
+    <div class="error-msg" id="login-error">Password non corretta</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="header">
+    <div class="header-inner">
+      <h1>📋 Listini</h1>
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Codice, EAN o %ricerca..." 
+               onkeydown="if(event.key==='Enter') doSearch()"
+               autofocus autocomplete="off" autocorrect="off" spellcheck="false">
+        <button class="btn-search" onclick="doSearch()">Cerca</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="content" id="main-content">
+    <div class="stato-msg">
+      <div class="icon">🔍</div>
+      <p>Cerca per codice articolo, EAN o usa <strong>%testo</strong> per ricerca libera</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // CONFIGURAZIONE — solo chiavi pubbliche, nessun segreto
+  // ============================================================
+  const SUPABASE_URL = 'https://TUO-PROGETTO.supabase.co';     // ← sostituisci
+  const SUPABASE_ANON_KEY = 'eyJ...TUA_ANON_KEY...';           // ← sostituisci
+  
+  let supabaseClient = null;
+  let authToken = null;
+
+  // ============================================================
+  // LOGIN
+  // ============================================================
+  async function doLogin() {
+    const pwd = document.getElementById('pwd-input').value;
+    const errEl = document.getElementById('login-error');
+    errEl.style.display = 'none';
+
+    if (!pwd) return;
+
+    try {
+      // La verifica password avviene sul server (api/auth.js)
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        errEl.style.display = 'block';
+        return;
+      }
+
+      authToken = data.token;
+
+      // Inizializza Supabase con il token utente
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: `Bearer ${authToken}` } }
+      });
+
+      // Mostra app
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display = 'block';
+      document.getElementById('search-input').focus();
+
+    } catch (e) {
+      errEl.textContent = 'Errore di rete, riprova';
+      errEl.style.display = 'block';
+    }
+  }
+
+  // ============================================================
+  // RICERCA
+  // ============================================================
+  async function doSearch() {
+    const query = document.getElementById('search-input').value.trim();
+    if (!query) return;
+
+    const content = document.getElementById('main-content');
+    content.innerHTML = '<div class="stato-msg loading"><div class="icon">⏳</div><p>Ricerca in corso...</p></div>';
+
+    try {
+      let dbQuery = supabaseClient.from('prodotti').select('*');
+
+      if (query.startsWith('%')) {
+        // Ricerca parziale LIKE
+        const term = query.slice(1);
+        dbQuery = dbQuery.ilike('art', `%${term}%`);
+      } else if (/^\d{8,14}$/.test(query)) {
+        // EAN (solo cifre, 8-14 caratteri)
+        dbQuery = dbQuery.or(`ean.eq.${query},art.eq.${query}`);
+      } else {
+        // Codice articolo esatto
+        dbQuery = dbQuery.eq('art', query);
+      }
+
+      const { data, error } = await dbQuery.order('fornitore').limit(100);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        content.innerHTML = '<div class="stato-msg"><div class="icon">😕</div><p>Nessun articolo trovato</p></div>';
+        return;
+      }
+
+      if (data.length === 1) {
+        showDettaglio(data[0]);
+      } else {
+        showListaRisultati(data);
+      }
+
+    } catch (e) {
+      content.innerHTML = `<div class="stato-msg"><div class="icon">⚠️</div><p>Errore: ${e.message}</p></div>`;
+    }
+  }
+
+  // ============================================================
+  // LISTA RISULTATI
+  // ============================================================
+  function showListaRisultati(items) {
+    const content = document.getElementById('main-content');
+    
+    const rows = items.map(item => `
+      <div class="result-item" onclick='showDettaglio(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+        <div class="result-art">${esc(item.art || '—')}</div>
+        <div class="result-desc">${esc(item.descrizione || '—')}</div>
+        <div class="result-meta">${esc(item.fornitore || '')} · ${esc(item.um || '')}</div>
+        <div class="result-price">€ ${fmt(item.prezzo)}</div>
+      </div>
+    `).join('');
+
+    content.innerHTML = `
+      <div class="results-count">${items.length} risultati trovati</div>
+      <div class="results-list">${rows}</div>
+    `;
+  }
+
+  // ============================================================
+  // DETTAGLIO ARTICOLO
+  // ============================================================
+  function showDettaglio(item) {
+    const content = document.getElementById('main-content');
+    const p = parseFloat(item.prezzo) || 0;
+
+    const prezzi = [
+      { label: 'Prezzo Base', valore: p, classe: 'base', molt: '× 1.00' },
+      { label: 'CHN Ufficiale', valore: p * 1.05, classe: 'chn', molt: '× 1.05' },
+      { label: 'Interventi Esterni', valore: p * 1.25, classe: 'interventi', molt: '× 1.25' },
+      { label: 'Fabbro', valore: p * 0.73, classe: 'fabbro', molt: '× 0.73' },
+      { label: 'Minimo Vendita', valore: p * 0.68, classe: 'minimo', molt: '× 0.68' },
+    ];
+
+    const prezziHtml = prezzi.map(pr => `
+      <div class="prezzo-card ${pr.classe}">
+        <div class="prezzo-label">${pr.label}</div>
+        <div class="prezzo-valore">€ ${fmt(pr.valore)}</div>
+        <div class="prezzo-moltiplicatore">${pr.molt}</div>
+      </div>
+    `).join('');
+
+    content.innerHTML = `
+      <button class="btn-back" onclick="document.getElementById('search-input').focus()">
+        ← Nuova ricerca
+      </button>
+      <div class="detail-card">
+        <div class="article-header">
+          <div class="article-code">${esc(item.art || '—')}</div>
+          <div class="article-desc">${esc(item.descrizione || '—')}</div>
+          <div class="article-meta">
+            <span class="meta-tag">📦 ${esc(item.um || 'N/D')}</span>
+            <span class="meta-tag">🏭 ${esc(item.fornitore || 'N/D')}</span>
+            ${item.categoria ? `<span class="meta-tag">🏷️ ${esc(item.categoria)}</span>` : ''}
+          </div>
+          ${item.data_aggiornamento ? `<div class="article-update">Aggiornato: ${esc(item.data_aggiornamento)}</div>` : ''}
+        </div>
+        <div class="prezzi-grid">${prezziHtml}</div>
+      </div>
+    `;
+  }
+
+  // ============================================================
+  // UTILITY
+  // ============================================================
+  function fmt(n) {
+    const num = parseFloat(n);
+    if (isNaN(num)) return '—';
+    return num.toFixed(2).replace('.', ',');
+  }
+
+  function esc(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+</body>
+</html>
