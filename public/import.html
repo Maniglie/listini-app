@@ -427,8 +427,15 @@
   // Usa la SERVICE ROLE KEY qui sotto per poter scrivere/cancellare
   const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsdG9ra21tZ2lxY2VhcnphcHpmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjY3MTgyNywiZXhwIjoyMDkyMjQ3ODI3fQ.nH0V7hZSP_OKsCDJC7begBg4VwAe0GplWhVgedryDtA';  // ← sostituisci
 
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  },
+  db: {
+    schema: 'public'
+  }
+});
   // ============================================================
   // STATO
   // ============================================================
