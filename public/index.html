@@ -357,28 +357,7 @@
   // ============================================================
   // SCANNER BARCODE — html5-qrcode
   // ============================================================
-  html5QrCode.start(
-  {
-    facingMode: "environment"
-  },
-  {
-    fps: 15,
-    qrbox: { width: 280, height: 120 }, // più stretto → meglio per barcode
-    aspectRatio: 1.777,
-    experimentalFeatures: {
-      useBarCodeDetectorIfSupported: true // 🔥 importantissimo
-    },
-    videoConstraints: {
-      focusMode: "continuous",
-      width: { ideal: 1920 },
-      height: { ideal: 1080 }
-    }
-  }
 
-
-
-
-  
   var html5QrCode = null;
   var scannerRunning = false;
 
@@ -415,26 +394,45 @@
     };
 
     html5QrCode.start(
-      { facingMode: 'environment' },
-      config,
-      function(decodedText) {
-        // Codice letto — pulisce spazi e cerca
-        var codice = decodedText.replace(/\s+/g, '');
-        document.getElementById('search-input').value = codice;
+  {
+    facingMode: "environment",
+    // 👉 qui forziamo qualità e autofocus
+    width: { ideal: 1920 },
+    height: { ideal: 1080 },
+    advanced: [{ zoom: 2.0 }], // Android migliora molto
+    focusMode: "continuous"
+  },
+  {
+    fps: 15,
+    // 👉 box rettangolare (molto meglio per barcode)
+    qrbox: { width: 300, height: 120 },
 
-        // Vibrazione feedback (Android)
-        if (navigator.vibrate) navigator.vibrate(80);
+    aspectRatio: 1.777,
 
-        stopScanner();
-        doSearch();
-      }
-    ).catch(function(err) {
-      stopScanner();
-      alert('Impossibile accedere alla fotocamera.\nVerifica i permessi nelle impostazioni del browser.');
-    });
+    // 👉 usa motore nativo se disponibile (super importante)
+    experimentalFeatures: {
+      useBarCodeDetectorIfSupported: true
+    },
 
-    scannerRunning = true;
+    formatsToSupport: [
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.CODE_128
+    ]
+  },
+  function(decodedText) {
+    var codice = decodedText.replace(/\s+/g, '');
+    document.getElementById('search-input').value = codice;
+
+    if (navigator.vibrate) navigator.vibrate(80);
+
+    stopScanner();
+    doSearch();
   }
+).catch(function(err) {
+  stopScanner();
+  alert('Impossibile accedere alla fotocamera.\nVerifica i permessi nelle impostazioni del browser.');
+});
 
   function stopScanner() {
     var btn = document.getElementById('btn-scan');
