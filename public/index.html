@@ -368,87 +368,51 @@
     }
   }
 
-function startScanner() {
-  var container = document.getElementById('scanner-container');
-  var btn = document.getElementById('btn-scan');
+  function startScanner() {
+    var container = document.getElementById('scanner-container');
+    var btn = document.getElementById('btn-scan');
 
-  container.classList.add('active');
-  btn.classList.add('active');
-  btn.textContent = '✕';
+    container.classList.add('active');
+    btn.classList.add('active');
+    btn.textContent = '✕';
 
-  html5QrCode = new Html5Qrcode('reader');
+    html5QrCode = new Html5Qrcode('reader');
 
-  // 👉 CONFIG MIGLIORATA MA COMPATIBILE
-  var cameraConfig = {
-    facingMode: 'environment'
-  };
+    var config = {
+      fps: 10,
+      qrbox: { width: 280, height: 140 },
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.ITF,
+      ]
+    };
 
-  var config = {
-    fps: 15,
+    html5QrCode.start(
+      { facingMode: 'environment' },
+      config,
+      function(decodedText) {
+        // Codice letto — pulisce spazi e cerca
+        var codice = decodedText.replace(/\s+/g, '');
+        document.getElementById('search-input').value = codice;
 
-    // 🔥 fondamentale per barcode (rettangolo, non quadrato)
-    qrbox: function(viewfinderWidth, viewfinderHeight) {
-      var minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-      return {
-        width: minEdge * 0.9,
-        height: minEdge * 0.35
-      };
-    },
+        // Vibrazione feedback (Android)
+        if (navigator.vibrate) navigator.vibrate(80);
 
-    aspectRatio: 1.777,
-
-    // 🔥 usa motore nativo quando disponibile (iPhone incluso)
-    experimentalFeatures: {
-      useBarCodeDetectorIfSupported: true
-    },
-
-    formatsToSupport: [
-      Html5QrcodeSupportedFormats.EAN_13,
-      Html5QrcodeSupportedFormats.EAN_8,
-      Html5QrcodeSupportedFormats.CODE_128,
-      Html5QrcodeSupportedFormats.CODE_39,
-      Html5QrcodeSupportedFormats.UPC_A,
-      Html5QrcodeSupportedFormats.UPC_E,
-      Html5QrcodeSupportedFormats.ITF
-    ]
-  };
-
-  html5QrCode.start(
-    cameraConfig,
-    config,
-    function(decodedText) {
-
-      var codice = decodedText.replace(/\s+/g, '');
-      document.getElementById('search-input').value = codice;
-
-      if (navigator.vibrate) navigator.vibrate(80);
-
-      stopScanner();
-      doSearch();
-    }
-  ).then(function() {
-    scannerRunning = true;
-
-    // 🔥 autofocus continuo (se supportato)
-    try {
-      var track = html5QrCode.getRunningTrack();
-      if (track && track.applyConstraints) {
-        track.applyConstraints({
-          advanced: [
-            { focusMode: "continuous" },
-            { zoom: 2.0 }
-          ]
-        });
+        stopScanner();
+        doSearch();
       }
-    } catch(e) {
-      // ignora se non supportato
-    }
+    ).catch(function(err) {
+      stopScanner();
+      alert('Impossibile accedere alla fotocamera.\nVerifica i permessi nelle impostazioni del browser.');
+    });
 
-  }).catch(function(err) {
-    stopScanner();
-    alert('Impossibile accedere alla fotocamera.\nVerifica i permessi del browser.');
-  });
-}
+    scannerRunning = true;
+  }
 
   function stopScanner() {
     var btn = document.getElementById('btn-scan');
