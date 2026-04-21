@@ -4,7 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Listini Prezzi</title>
+
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- ZXing UMD (no ES modules, funziona globalmente) -->
+  <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -41,7 +46,6 @@
       flex-shrink: 0;
     }
 
-    /* Barra di ricerca: input + bottoni sulla stessa riga */
     .search-bar {
       display: flex;
       align-items: center;
@@ -63,7 +67,7 @@
 
     .search-bar input:focus { border-color: #4361ee; }
 
-    /* Bottone fotocamera — input file nascosto sopra */
+    /* Bottone fotocamera con input file sopra */
     .scan-btn-wrap {
       position: relative;
       flex-shrink: 0;
@@ -78,7 +82,7 @@
       cursor: pointer;
       width: 100%;
       height: 100%;
-      font-size: 0; /* evita testo su iOS */
+      font-size: 0;
     }
 
     .scan-btn-icon {
@@ -91,7 +95,7 @@
       justify-content: center;
       font-size: 1.2rem;
       pointer-events: none;
-      transition: background 0.2s;
+      transition: background 0.15s;
     }
 
     .scan-btn-wrap:active .scan-btn-icon { background: #dde1ea; }
@@ -111,18 +115,16 @@
     }
 
     .btn-search:hover { background: #3451d1; }
+    .btn-search:active { background: #2c44b8; }
 
-    /* Nascondi logo su schermi molto piccoli per non comprimere la barra */
-    @media (max-width: 360px) {
-      .logo { display: none; }
-    }
+    @media (max-width: 360px) { .logo { display: none; } }
 
-    /* SPINNER SCANSIONE */
+    /* SPINNER */
     .scan-spinner {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.55);
+      background: rgba(0,0,0,0.6);
       z-index: 500;
       align-items: center;
       justify-content: center;
@@ -143,10 +145,7 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .spinner-text {
-      color: white;
-      font-size: 0.9rem;
-    }
+    .spinner-text { color: white; font-size: 0.9rem; }
 
     /* CONTENUTO */
     .content {
@@ -174,7 +173,6 @@
 
     /* LISTA RISULTATI */
     .results-count { font-size: 0.85rem; color: #888; margin-bottom: 12px; }
-
     .results-list { display: flex; flex-direction: column; gap: 8px; }
 
     .result-item {
@@ -191,7 +189,6 @@
     }
 
     .result-item:hover { border-color: #4361ee; box-shadow: 0 4px 16px rgba(67,97,238,0.15); }
-
     .result-art  { font-weight: 700; font-size: 0.9rem; color: #4361ee; }
     .result-desc { font-size: 0.88rem; color: #333; grid-column: 1; }
     .result-meta { font-size: 0.76rem; color: #888; grid-column: 1; }
@@ -268,15 +265,9 @@
     .article-update { font-size: 0.73rem; color: #aaa; margin-top: 8px; }
 
     /* GRIGLIA PREZZI */
-    .prezzi-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
+    .prezzi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-    @media (max-width: 420px) {
-      .prezzi-grid { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 420px) { .prezzi-grid { grid-template-columns: 1fr; } }
 
     .prezzo-card { border-radius: 12px; padding: 14px 16px; text-align: center; }
 
@@ -323,11 +314,9 @@
              onkeydown="if(event.key==='Enter') doSearch()"
              autofocus autocomplete="off" autocorrect="off" spellcheck="false">
 
-      <!-- Bottone fotocamera: input file nativo, apre la fotocamera su mobile -->
-      <div class="scan-btn-wrap">
-        <input type="file" id="scan-input"
-               accept="image/*"
-               capture="environment">
+      <!-- Fotocamera nativa OS -->
+      <div class="scan-btn-wrap" title="Scansiona barcode">
+        <input type="file" id="scan-input" accept="image/*" capture="environment">
         <div class="scan-btn-icon">📷</div>
       </div>
 
@@ -336,13 +325,13 @@
   </div>
 </div>
 
-<!-- SPINNER durante decodifica -->
+<!-- SPINNER decodifica -->
 <div class="scan-spinner" id="scan-spinner">
   <div class="spinner-ring"></div>
   <div class="spinner-text">Lettura codice...</div>
 </div>
 
-<!-- CONTENUTO -->
+<!-- CONTENUTO PRINCIPALE -->
 <div class="content" id="main-content">
   <div class="stato-msg">
     <div class="icon">🔍</div>
@@ -352,10 +341,7 @@
   </div>
 </div>
 
-<script type="module">
-  import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType }
-    from 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.1/+esm';
-
+<script>
   // ============================================================
   // CONFIGURAZIONE — sostituisci con i tuoi valori Supabase
   // ============================================================
@@ -365,130 +351,144 @@
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // ============================================================
-  // SCANNER — decodifica foto scattata con la fotocamera nativa
+  // SCANNER BARCODE
   // ============================================================
-  const hints = new Map();
-  hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-    BarcodeFormat.EAN_13,
-    BarcodeFormat.EAN_8,
-    BarcodeFormat.CODE_128,
-    BarcodeFormat.CODE_39,
-    BarcodeFormat.UPC_A,
-    BarcodeFormat.UPC_E,
-  ]);
-  hints.set(DecodeHintType.TRY_HARDER, true);
-
-  const reader = new BrowserMultiFormatReader(hints);
-
-  document.getElementById('scan-input').addEventListener('change', async (e) => {
+  document.getElementById('scan-input').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Mostra spinner
     document.getElementById('scan-spinner').classList.add('active');
 
-    try {
-      // Crea un URL temporaneo per l'immagine scattata
-      const imgUrl = URL.createObjectURL(file);
-      const img = new Image();
+    const imgUrl = URL.createObjectURL(file);
+    const img = new Image();
 
-      img.onload = async () => {
-        try {
-          const result = await reader.decodeFromImageElement(img);
-          const codice = result.getText();
-          document.getElementById('search-input').value = codice;
-          doSearch();
-        } catch (err) {
-          alert('Codice non rilevato. Riprova avvicinando la fotocamera al codice.');
-        } finally {
-          URL.revokeObjectURL(imgUrl);
-          document.getElementById('scan-spinner').classList.remove('active');
-          // Reset input così si può scansionare di nuovo lo stesso codice
-          e.target.value = '';
-        }
-      };
+    img.onload = function() {
+      try {
+        const hints = new Map();
+        const formats = [
+          ZXing.BarcodeFormat.EAN_13,
+          ZXing.BarcodeFormat.EAN_8,
+          ZXing.BarcodeFormat.CODE_128,
+          ZXing.BarcodeFormat.CODE_39,
+          ZXing.BarcodeFormat.UPC_A,
+          ZXing.BarcodeFormat.UPC_E,
+          ZXing.BarcodeFormat.ITF,
+        ];
+        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
+        hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
 
-      img.onerror = () => {
+        const reader = new ZXing.MultiFormatReader();
+        reader.setHints(hints);
+
+        // Disegna immagine su canvas per ottenere i pixel
+        const canvas = document.createElement('canvas');
+        canvas.width  = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const luminanceSource = new ZXing.RGBLuminanceSource(
+          imageData.data, canvas.width, canvas.height
+        );
+        const binaryBitmap = new ZXing.BinaryBitmap(
+          new ZXing.HybridBinarizer(luminanceSource)
+        );
+
+        const result = reader.decode(binaryBitmap);
+        const codice = result.getText();
+
+        document.getElementById('search-input').value = codice;
+        doSearch();
+
+      } catch(err) {
+        alert('Codice non rilevato.\nProva ad avvicinarti e a tenere la fotocamera ferma.');
+      } finally {
         URL.revokeObjectURL(imgUrl);
         document.getElementById('scan-spinner').classList.remove('active');
-        e.target.value = '';
-        alert('Errore nel caricamento dell\'immagine.');
-      };
+        e.target.value = ''; // reset per poter riscansionare
+      }
+    };
 
-      img.src = imgUrl;
-
-    } catch (err) {
+    img.onerror = function() {
+      URL.revokeObjectURL(imgUrl);
       document.getElementById('scan-spinner').classList.remove('active');
       e.target.value = '';
-      alert('Errore durante la scansione.');
-    }
+      alert('Errore nel caricamento dell\'immagine.');
+    };
+
+    img.src = imgUrl;
   });
 
   // ============================================================
   // RICERCA
   // ============================================================
-  window.doSearch = async () => {
+  function doSearch() {
     const query = document.getElementById('search-input').value.trim();
     if (!query) return;
 
     const content = document.getElementById('main-content');
     content.innerHTML = '<div class="stato-msg loading"><div class="icon">⏳</div><p>Ricerca in corso...</p></div>';
 
-    try {
-      let dbQuery = supabaseClient.from('prodotti').select('*');
+    let dbQuery = sb.from('prodotti').select('*');
 
-      if (query.startsWith('%')) {
-        const term = query.slice(1);
-        dbQuery = dbQuery.ilike('art', `%${term}%`);
-      } else if (/^\d{8,14}$/.test(query)) {
-        dbQuery = dbQuery.or(`ean.eq.${query},art.eq.${query}`);
-      } else {
-        dbQuery = dbQuery.eq('art', query);
+    if (query.startsWith('%')) {
+      dbQuery = dbQuery.ilike('art', '%' + query.slice(1) + '%');
+    } else if (/^\d{8,14}$/.test(query)) {
+      dbQuery = dbQuery.or('ean.eq.' + query + ',art.eq.' + query);
+    } else {
+      dbQuery = dbQuery.eq('art', query);
+    }
+
+    dbQuery.order('fornitore').limit(100).then(function(res) {
+      if (res.error) {
+        content.innerHTML = '<div class="stato-msg"><div class="icon">⚠️</div><p>Errore: ' + esc(res.error.message) + '</p></div>';
+        return;
       }
 
-      const { data, error } = await dbQuery.order('fornitore').limit(100);
-      if (error) throw error;
+      const data = res.data;
 
       if (!data || data.length === 0) {
         content.innerHTML = '<div class="stato-msg"><div class="icon">😕</div><p>Nessun articolo trovato</p></div>';
         return;
       }
 
-      data.length === 1 ? showDettaglio(data[0]) : showListaRisultati(data);
-
-    } catch (e) {
-      content.innerHTML = `<div class="stato-msg"><div class="icon">⚠️</div><p>Errore: ${e.message}</p></div>`;
-    }
-  };
+      if (data.length === 1) {
+        showDettaglio(data[0]);
+      } else {
+        showListaRisultati(data);
+      }
+    });
+  }
 
   // ============================================================
   // LISTA RISULTATI
   // ============================================================
-  window.showListaRisultati = (items) => {
+  function showListaRisultati(items) {
     const content = document.getElementById('main-content');
-    const rows = items.map(item => `
-      <div class="result-item" onclick='showDettaglio(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
-        <div class="result-art">${esc(item.art || '—')}</div>
-        <div class="result-desc">${esc(item.descrizione || '—')}</div>
-        <div class="result-meta">${esc(item.fornitore || '')}${item.um ? ' · ' + esc(item.um) : ''}</div>
-        <div class="result-price">€ ${fmt(item.prezzo)}</div>
-      </div>
-    `).join('');
 
-    content.innerHTML = `
-      <div class="results-count">${items.length} risultati trovati</div>
-      <div class="results-list">${rows}</div>
-    `;
-  };
+    var rows = items.map(function(item) {
+      return '<div class="result-item" onclick=\'showDettaglio(' + JSON.stringify(item).replace(/'/g, "&#39;") + ')\'>' +
+        '<div class="result-art">'  + esc(item.art || '—') + '</div>' +
+        '<div class="result-desc">' + esc(item.descrizione || '—') + '</div>' +
+        '<div class="result-meta">' + esc(item.fornitore || '') + (item.um ? ' · ' + esc(item.um) : '') + '</div>' +
+        '<div class="result-price">€ ' + fmt(item.prezzo) + '</div>' +
+      '</div>';
+    }).join('');
+
+    content.innerHTML =
+      '<div class="results-count">' + items.length + ' risultati trovati</div>' +
+      '<div class="results-list">' + rows + '</div>';
+  }
 
   // ============================================================
   // DETTAGLIO ARTICOLO + LISTINI
   // ============================================================
-  window.showDettaglio = (item) => {
+  function showDettaglio(item) {
     const content = document.getElementById('main-content');
     const p = parseFloat(item.prezzo) || 0;
 
-    const prezzi = [
+    var prezzi = [
       { label: 'Prezzo Base',        valore: p,        classe: 'base',       molt: '× 1.00' },
       { label: 'CHN Ufficiale',       valore: p * 1.05, classe: 'chn',        molt: '× 1.05' },
       { label: 'Interventi Esterni',  valore: p * 1.25, classe: 'interventi', molt: '× 1.25' },
@@ -496,44 +496,38 @@
       { label: 'Minimo Vendita',      valore: p * 0.68, classe: 'minimo',     molt: '× 0.68' },
     ];
 
-    const prezziHtml = prezzi.map(pr => `
-      <div class="prezzo-card ${pr.classe}">
-        <div class="prezzo-label">${pr.label}</div>
-        <div class="prezzo-valore">€ ${fmt(pr.valore)}</div>
-        <div class="prezzo-moltiplicatore">${pr.molt}</div>
-      </div>
-    `).join('');
+    var prezziHtml = prezzi.map(function(pr) {
+      return '<div class="prezzo-card ' + pr.classe + '">' +
+        '<div class="prezzo-label">' + pr.label + '</div>' +
+        '<div class="prezzo-valore">€ ' + fmt(pr.valore) + '</div>' +
+        '<div class="prezzo-moltiplicatore">' + pr.molt + '</div>' +
+      '</div>';
+    }).join('');
 
-    content.innerHTML = `
-      <button class="btn-back"
-        onclick="document.getElementById('search-input').focus();
-                 document.getElementById('search-input').select()">
-        ← Nuova ricerca
-      </button>
-      <div class="detail-card">
-        <div class="article-header">
-          <div class="article-code">${esc(item.art || '—')}</div>
-          <div class="article-desc">${esc(item.descrizione || '—')}</div>
-          <div class="article-meta">
-            ${item.um        ? `<span class="meta-tag">📦 ${esc(item.um)}</span>`         : ''}
-            ${item.fornitore ? `<span class="meta-tag">🏭 ${esc(item.fornitore)}</span>`  : ''}
-            ${item.categoria ? `<span class="meta-tag">🏷️ ${esc(item.categoria)}</span>` : ''}
-            ${item.ean       ? `<span class="meta-tag">🔢 ${esc(item.ean)}</span>`        : ''}
-          </div>
-          ${item.data_aggiornamento
-            ? `<div class="article-update">Aggiornato: ${esc(item.data_aggiornamento)}</div>`
-            : ''}
-        </div>
-        <div class="prezzi-grid">${prezziHtml}</div>
-      </div>
-    `;
-  };
+    var metaHtml = '';
+    if (item.um)        metaHtml += '<span class="meta-tag">📦 ' + esc(item.um) + '</span>';
+    if (item.fornitore) metaHtml += '<span class="meta-tag">🏭 ' + esc(item.fornitore) + '</span>';
+    if (item.categoria) metaHtml += '<span class="meta-tag">🏷️ ' + esc(item.categoria) + '</span>';
+    if (item.ean)       metaHtml += '<span class="meta-tag">🔢 ' + esc(item.ean) + '</span>';
+
+    content.innerHTML =
+      '<button class="btn-back" onclick="document.getElementById(\'search-input\').focus(); document.getElementById(\'search-input\').select()">← Nuova ricerca</button>' +
+      '<div class="detail-card">' +
+        '<div class="article-header">' +
+          '<div class="article-code">' + esc(item.art || '—') + '</div>' +
+          '<div class="article-desc">' + esc(item.descrizione || '—') + '</div>' +
+          '<div class="article-meta">' + metaHtml + '</div>' +
+          (item.data_aggiornamento ? '<div class="article-update">Aggiornato: ' + esc(item.data_aggiornamento) + '</div>' : '') +
+        '</div>' +
+        '<div class="prezzi-grid">' + prezziHtml + '</div>' +
+      '</div>';
+  }
 
   // ============================================================
   // UTILITY
   // ============================================================
   function fmt(n) {
-    const num = parseFloat(n);
+    var num = parseFloat(n);
     if (isNaN(num)) return '—';
     return num.toFixed(2).replace('.', ',');
   }
