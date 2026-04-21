@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Listini Prezzi</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -53,6 +54,7 @@
       border-radius: 10px;
       outline: none;
       transition: border-color 0.2s;
+     <button onclick="startScanner()">📷</button>
     }
 
     .search-bar input:focus { border-color: #4361ee; }
@@ -298,6 +300,8 @@
   </div>
 </div>
 
+<div id="reader" style="width:100%; max-width:400px; margin:10px auto; display:none;"></div>
+
 <div class="content" id="main-content">
   <div class="stato-msg">
     <div class="icon">🔍</div>
@@ -314,6 +318,49 @@
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsdG9ra21tZ2lxY2VhcnphcHpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NzE4MjcsImV4cCI6MjA5MjI0NzgyN30.Aokl-GKXauodlJW7SgUBuYVh8l2tzJGm1rnlSFQ5djE';            // ← sostituisci
 
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+
+let html5QrCode;
+
+function startScanner() {
+  const reader = document.getElementById("reader");
+  reader.style.display = "block";
+
+  html5QrCode = new Html5Qrcode("reader");
+
+  html5QrCode.start(
+    { facingMode: "environment" }, // camera posteriore
+    {
+      fps: 10,
+      qrbox: 250,
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.CODE_128
+      ]
+    },
+    (decodedText) => {
+      // 👉 Rimuove eventuali spazi (come vuoi tu)
+      const codice = decodedText.replace(/\s+/g, '');
+
+      document.getElementById('search-input').value = codice;
+
+      stopScanner();
+      doSearch(); // auto invio
+    }
+  );
+}
+
+function stopScanner() {
+  if (html5QrCode) {
+    html5QrCode.stop().then(() => {
+      document.getElementById("reader").style.display = "none";
+    });
+  }
+}
+
+
 
   // ============================================================
   // RICERCA
