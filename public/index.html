@@ -53,7 +53,6 @@
       border-radius: 10px;
       outline: none;
       transition: border-color 0.2s;
-      min-width: 0;
     }
 
     .search-bar input:focus { border-color: #4361ee; }
@@ -75,146 +74,7 @@
     }
 
     .btn-search:hover { background: #3451d1; }
-
-    .btn-scan {
-      background: #f0f2f5;
-      color: #333;
-      padding: 10px 13px;
-      font-size: 1.2rem;
-      line-height: 1;
-      display: none; /* visibile solo su mobile */
-    }
-
-    .btn-scan:hover { background: #e0e4eb; }
-
-    /* Mostra bottone scan solo su touch device */
-    @media (hover: none) and (pointer: coarse) {
-      .btn-scan { display: inline-flex; align-items: center; }
-    }
-
-    /* MODAL SCANNER */
-    .scanner-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.92);
-      z-index: 1000;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .scanner-overlay.active { display: flex; }
-
-    .scanner-title {
-      color: white;
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-
-    .scanner-wrap {
-      position: relative;
-      width: 100%;
-      max-width: 400px;
-      border-radius: 16px;
-      overflow: hidden;
-      background: #000;
-    }
-
-    #scanner-video {
-      width: 100%;
-      display: block;
-      max-height: 60vh;
-      object-fit: cover;
-    }
-
-    /* Mirino */
-    .scanner-frame {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-    }
-
-    .scanner-box {
-      width: 65%;
-      aspect-ratio: 2/1;
-      border: 2px solid rgba(255,255,255,0.8);
-      border-radius: 8px;
-      position: relative;
-      box-shadow: 0 0 0 1000px rgba(0,0,0,0.4);
-    }
-
-    /* Angolini colorati */
-    .scanner-box::before,
-    .scanner-box::after {
-      content: '';
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      border-color: #4af0a0;
-      border-style: solid;
-    }
-    .scanner-box::before {
-      top: -2px; left: -2px;
-      border-width: 3px 0 0 3px;
-      border-radius: 4px 0 0 0;
-    }
-    .scanner-box::after {
-      bottom: -2px; right: -2px;
-      border-width: 0 3px 3px 0;
-      border-radius: 0 0 4px 0;
-    }
-
-    /* Linea di scansione animata */
-    .scan-line {
-      position: absolute;
-      left: 4px; right: 4px;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, #4af0a0, transparent);
-      animation: scanMove 2s ease-in-out infinite;
-      border-radius: 1px;
-    }
-
-    @keyframes scanMove {
-      0%   { top: 10%; opacity: 0; }
-      10%  { opacity: 1; }
-      90%  { opacity: 1; }
-      100% { top: 90%; opacity: 0; }
-    }
-
-    .scanner-hint {
-      color: rgba(255,255,255,0.7);
-      font-size: 0.82rem;
-      text-align: center;
-      margin-top: 16px;
-    }
-
-    .btn-close-scanner {
-      margin-top: 24px;
-      background: rgba(255,255,255,0.15);
-      color: white;
-      padding: 12px 32px;
-      border-radius: 10px;
-      font-size: 0.95rem;
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-
-    .btn-close-scanner:hover { background: rgba(255,255,255,0.25); }
-
-    /* Flash verde al successo */
-    @keyframes flash {
-      0%   { box-shadow: 0 0 0 0 rgba(74,240,160,0); }
-      50%  { box-shadow: 0 0 0 16px rgba(74,240,160,0.7); }
-      100% { box-shadow: 0 0 0 0 rgba(74,240,160,0); }
-    }
-
-    .scanner-wrap.success-flash { animation: flash 0.4s ease; }
+    .btn-search:active { transform: scale(0.98); }
 
     /* CONTENUTO */
     .content {
@@ -223,6 +83,7 @@
       padding: 0 16px 40px;
     }
 
+    /* STATO / MESSAGGI */
     .stato-msg {
       text-align: center;
       padding: 60px 20px;
@@ -268,9 +129,23 @@
       box-shadow: 0 4px 16px rgba(67,97,238,0.15);
     }
 
-    .result-art { font-weight: 700; font-size: 0.95rem; color: #4361ee; }
-    .result-desc { font-size: 0.9rem; color: #333; grid-column: 1; }
-    .result-meta { font-size: 0.78rem; color: #888; grid-column: 1; }
+    .result-art {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #4361ee;
+    }
+
+    .result-desc {
+      font-size: 0.9rem;
+      color: #333;
+      grid-column: 1;
+    }
+
+    .result-meta {
+      font-size: 0.78rem;
+      color: #888;
+      grid-column: 1;
+    }
 
     .result-price {
       font-size: 1.2rem;
@@ -326,7 +201,11 @@
       line-height: 1.3;
     }
 
-    .article-meta { display: flex; gap: 10px; flex-wrap: wrap; }
+    .article-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
 
     .meta-tag {
       background: #f0f2f5;
@@ -336,7 +215,11 @@
       color: #555;
     }
 
-    .article-update { font-size: 0.75rem; color: #aaa; margin-top: 10px; }
+    .article-update {
+      font-size: 0.75rem;
+      color: #aaa;
+      margin-top: 10px;
+    }
 
     /* GRIGLIA PREZZI */
     .prezzi-grid {
@@ -350,13 +233,22 @@
       .header h1 { display: none; }
     }
 
-    .prezzo-card { border-radius: 12px; padding: 16px 18px; text-align: center; }
+    .prezzo-card {
+      border-radius: 12px;
+      padding: 16px 18px;
+      text-align: center;
+    }
 
-    .prezzo-card.base       { background: #1a1a2e; color: white; grid-column: 1 / -1; }
-    .prezzo-card.chn        { background: #eef2ff; border: 2px solid #c7d2fe; }
-    .prezzo-card.interventi { background: #fff7ed; border: 2px solid #fed7aa; }
-    .prezzo-card.fabbro     { background: #f0fdf4; border: 2px solid #bbf7d0; }
-    .prezzo-card.minimo     { background: #fef2f2; border: 2px solid #fecaca; }
+    .prezzo-card.base {
+      background: #1a1a2e;
+      color: white;
+      grid-column: 1 / -1;
+    }
+
+    .prezzo-card.chn         { background: #eef2ff; border: 2px solid #c7d2fe; }
+    .prezzo-card.interventi  { background: #fff7ed; border: 2px solid #fed7aa; }
+    .prezzo-card.fabbro      { background: #f0fdf4; border: 2px solid #bbf7d0; }
+    .prezzo-card.minimo      { background: #fef2f2; border: 2px solid #fecaca; }
 
     .prezzo-label {
       font-size: 0.72rem;
@@ -366,13 +258,17 @@
       margin-bottom: 6px;
     }
 
-    .prezzo-card.base .prezzo-label        { color: rgba(255,255,255,0.7); }
+    .prezzo-card.base .prezzo-label { color: rgba(255,255,255,0.7); }
     .prezzo-card.chn .prezzo-label         { color: #4338ca; }
     .prezzo-card.interventi .prezzo-label  { color: #c2410c; }
     .prezzo-card.fabbro .prezzo-label      { color: #166534; }
     .prezzo-card.minimo .prezzo-label      { color: #b91c1c; }
 
-    .prezzo-valore { font-size: 1.9rem; font-weight: 800; line-height: 1; }
+    .prezzo-valore {
+      font-size: 1.9rem;
+      font-weight: 800;
+      line-height: 1;
+    }
 
     .prezzo-card.base .prezzo-valore       { color: white; font-size: 2.2rem; }
     .prezzo-card.chn .prezzo-valore        { color: #3730a3; }
@@ -380,55 +276,37 @@
     .prezzo-card.fabbro .prezzo-valore     { color: #166534; }
     .prezzo-card.minimo .prezzo-valore     { color: #b91c1c; }
 
-    .prezzo-moltiplicatore { font-size: 0.72rem; opacity: 0.55; margin-top: 5px; }
+    .prezzo-moltiplicatore {
+      font-size: 0.72rem;
+      opacity: 0.55;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <div class="header">
   <div class="header-inner">
     <h1>📋 Listini</h1>
     <div class="search-bar">
       <input type="text" id="search-input"
-             placeholder="Codice, EAN oppure %ricerca..."
+             placeholder="Codice, EAN oppure %ricerca libera..."
              onkeydown="if(event.key==='Enter') doSearch()"
              autofocus autocomplete="off" autocorrect="off" spellcheck="false">
-      <button class="btn-scan" id="btn-scan" title="Scansiona barcode">📷</button>
       <button class="btn-search" onclick="doSearch()">Cerca</button>
     </div>
   </div>
 </div>
 
-<!-- SCANNER OVERLAY -->
-<div class="scanner-overlay" id="scanner-overlay">
-  <div class="scanner-title">📷 Inquadra il codice a barre</div>
-  <div class="scanner-wrap" id="scanner-wrap">
-    <video id="scanner-video" autoplay playsinline muted></video>
-    <div class="scanner-frame">
-      <div class="scanner-box">
-        <div class="scan-line"></div>
-      </div>
-    </div>
-  </div>
-  <div class="scanner-hint">Avvicina il codice al centro del mirino</div>
-  <button class="btn-close-scanner" onclick="closeScanner()">✕ Chiudi</button>
-</div>
-
-<!-- CONTENUTO -->
 <div class="content" id="main-content">
   <div class="stato-msg">
     <div class="icon">🔍</div>
     <p>Cerca per <strong>codice articolo</strong> o <strong>EAN</strong><br>
-       Usa <strong>%testo</strong> per ricerca parziale<br>
-       Su mobile usa 📷 per scansionare il barcode</p>
+       Usa <strong>%testo</strong> per ricerca parziale sul codice</p>
   </div>
 </div>
 
-<script type="module">
-  import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType }
-    from 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.1/+esm';
-
+<script>
   // ============================================================
   // CONFIGURAZIONE — sostituisci con i tuoi valori Supabase
   // ============================================================
@@ -436,79 +314,11 @@
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsdG9ra21tZ2lxY2VhcnphcHpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NzE4MjcsImV4cCI6MjA5MjI0NzgyN30.Aokl-GKXauodlJW7SgUBuYVh8l2tzJGm1rnlSFQ5djE';            // ← sostituisci
 
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  // ============================================================
-  // SCANNER BARCODE
-  // ============================================================
-  const hints = new Map();
-  hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-    BarcodeFormat.EAN_13,
-    BarcodeFormat.EAN_8,
-    BarcodeFormat.CODE_128,
-    BarcodeFormat.CODE_39,
-    BarcodeFormat.UPC_A,
-    BarcodeFormat.UPC_E,
-  ]);
-  hints.set(DecodeHintType.TRY_HARDER, true);
-
-  const codeReader = new BrowserMultiFormatReader(hints);
-  let scannerActive = false;
-
-  document.getElementById('btn-scan').addEventListener('click', openScanner);
-
-  async function openScanner() {
-    document.getElementById('scanner-overlay').classList.add('active');
-    scannerActive = true;
-
-    try {
-      const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-
-      // Priorità: camera posteriore (back/rear/environment nel nome)
-      const backCamera =
-        devices.find(d => /back|rear|environment/i.test(d.label)) ||
-        devices[devices.length - 1] ||
-        devices[0];
-
-      await codeReader.decodeFromVideoDevice(
-        backCamera?.deviceId,
-        document.getElementById('scanner-video'),
-        (result, err) => {
-          if (!result || !scannerActive) return;
-
-          const codice = result.getText();
-
-          // Flash verde di conferma
-          const wrap = document.getElementById('scanner-wrap');
-          wrap.classList.add('success-flash');
-          setTimeout(() => wrap.classList.remove('success-flash'), 400);
-
-          // Metti il codice nel campo di ricerca
-          document.getElementById('search-input').value = codice;
-
-          // Chiudi e cerca
-          closeScanner();
-          setTimeout(() => doSearch(), 200);
-        }
-      );
-    } catch (e) {
-      closeScanner();
-      alert('Fotocamera non disponibile o permesso negato.\nVerifica le impostazioni del browser.');
-    }
-  }
-
-  window.closeScanner = () => {
-    scannerActive = false;
-    try { codeReader.reset(); } catch(e) {}
-    document.getElementById('scanner-overlay').classList.remove('active');
-  };
-
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeScanner();
-  });
 
   // ============================================================
   // RICERCA
   // ============================================================
-  window.doSearch = async () => {
+  async function doSearch() {
     const query = document.getElementById('search-input').value.trim();
     if (!query) return;
 
@@ -519,11 +329,11 @@
       let dbQuery = supabaseClient.from('prodotti').select('*');
 
       if (query.startsWith('%')) {
-        // Ricerca parziale LIKE
+        // Ricerca parziale LIKE sul codice articolo
         const term = query.slice(1);
         dbQuery = dbQuery.ilike('art', `%${term}%`);
       } else if (/^\d{8,14}$/.test(query)) {
-        // EAN (solo cifre, 8-14 caratteri)
+        // EAN: solo cifre, 8-14 caratteri
         dbQuery = dbQuery.or(`ean.eq.${query},art.eq.${query}`);
       } else {
         // Codice articolo esatto
@@ -548,13 +358,14 @@
     } catch (e) {
       content.innerHTML = `<div class="stato-msg"><div class="icon">⚠️</div><p>Errore: ${e.message}</p></div>`;
     }
-  };
+  }
 
   // ============================================================
-  // LISTA RISULTATI
+  // LISTA RISULTATI MULTIPLI
   // ============================================================
-  window.showListaRisultati = (items) => {
+  function showListaRisultati(items) {
     const content = document.getElementById('main-content');
+
     const rows = items.map(item => `
       <div class="result-item" onclick='showDettaglio(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
         <div class="result-art">${esc(item.art || '—')}</div>
@@ -568,21 +379,21 @@
       <div class="results-count">${items.length} risultati trovati</div>
       <div class="results-list">${rows}</div>
     `;
-  };
+  }
 
   // ============================================================
   // DETTAGLIO ARTICOLO + LISTINI
   // ============================================================
-  window.showDettaglio = (item) => {
+  function showDettaglio(item) {
     const content = document.getElementById('main-content');
     const p = parseFloat(item.prezzo) || 0;
 
     const prezzi = [
-      { label: 'Prezzo Base',        valore: p,        classe: 'base',       molt: '× 1.00' },
-      { label: 'CHN Ufficiale',       valore: p * 1.05, classe: 'chn',        molt: '× 1.05' },
-      { label: 'Interventi Esterni',  valore: p * 1.25, classe: 'interventi', molt: '× 1.25' },
-      { label: 'Fabbro',              valore: p * 0.73, classe: 'fabbro',     molt: '× 0.73' },
-      { label: 'Minimo Vendita',      valore: p * 0.68, classe: 'minimo',     molt: '× 0.68' },
+      { label: 'Prezzo Base',         valore: p,        classe: 'base',       molt: '× 1.00' },
+      { label: 'CHN Ufficiale',        valore: p * 1.05, classe: 'chn',        molt: '× 1.05' },
+      { label: 'Interventi Esterni',   valore: p * 1.25, classe: 'interventi', molt: '× 1.25' },
+      { label: 'Fabbro',               valore: p * 0.73, classe: 'fabbro',     molt: '× 0.73' },
+      { label: 'Minimo Vendita',       valore: p * 0.68, classe: 'minimo',     molt: '× 0.68' },
     ];
 
     const prezziHtml = prezzi.map(pr => `
@@ -594,9 +405,7 @@
     `).join('');
 
     content.innerHTML = `
-      <button class="btn-back"
-        onclick="document.getElementById('search-input').focus();
-                 document.getElementById('search-input').select()">
+      <button class="btn-back" onclick="document.getElementById('search-input').focus(); document.getElementById('search-input').select()">
         ← Nuova ricerca
       </button>
       <div class="detail-card">
@@ -616,7 +425,7 @@
         <div class="prezzi-grid">${prezziHtml}</div>
       </div>
     `;
-  };
+  }
 
   // ============================================================
   // UTILITY
