@@ -3,664 +3,446 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Import Listini</title>
+  <title>Listini Prezzi</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
-
-    :root {
-      --bg: #0f1117;
-      --surface: #181c27;
-      --border: #2a2f3e;
-      --accent: #4af0a0;
-      --accent-dim: rgba(74,240,160,0.12);
-      --accent-glow: rgba(74,240,160,0.3);
-      --danger: #ff5c5c;
-      --danger-dim: rgba(255,92,92,0.12);
-      --warn: #fbbf24;
-      --text: #e8eaf0;
-      --muted: #6b7280;
-      --mono: 'IBM Plex Mono', monospace;
-      --sans: 'IBM Plex Sans', sans-serif;
-    }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: var(--sans);
-      background: var(--bg);
-      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 16px 60px;
-    }
-
-    /* Griglia sfondo */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(74,240,160,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(74,240,160,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 620px;
-      position: relative;
-      z-index: 1;
     }
 
     /* HEADER */
-    .page-header {
-      margin-bottom: 36px;
+    .header {
+      background: white;
+      padding: 16px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      max-width: 800px;
+      margin: 0 auto;
       display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 16px;
+      align-items: center;
+      gap: 12px;
     }
 
-    .page-title {
-      font-family: var(--mono);
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--accent);
-      letter-spacing: -0.02em;
-    }
-
-    .page-title span {
-      color: var(--muted);
-      font-weight: 400;
-    }
-
-    .back-link {
-      font-family: var(--mono);
-      font-size: 0.78rem;
-      color: var(--muted);
-      text-decoration: none;
-      border: 1px solid var(--border);
-      padding: 6px 12px;
-      border-radius: 6px;
-      transition: all 0.2s;
+    .header h1 {
+      font-size: 1.2rem;
+      color: #4361ee;
       white-space: nowrap;
     }
 
-    .back-link:hover {
-      color: var(--accent);
-      border-color: var(--accent);
-      background: var(--accent-dim);
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      flex: 1;
     }
 
-    /* CARD */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 28px;
-      margin-bottom: 16px;
-    }
-
-    .card-label {
-      font-family: var(--mono);
-      font-size: 0.7rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--muted);
-      margin-bottom: 16px;
-    }
-
-    /* DROP ZONE */
-    .drop-zone {
-      border: 2px dashed var(--border);
+    .search-bar input {
+      flex: 1;
+      padding: 10px 14px;
+      font-size: 1rem;
+      border: 2px solid #e0e0e0;
       border-radius: 10px;
-      padding: 40px 24px;
-      text-align: center;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-bar input:focus { border-color: #4361ee; }
+
+    button {
       cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
       transition: all 0.2s;
-      position: relative;
     }
 
-    .drop-zone:hover,
-    .drop-zone.drag-over {
-      border-color: var(--accent);
-      background: var(--accent-dim);
+    .btn-search {
+      background: #4361ee;
+      color: white;
+      padding: 10px 18px;
+      white-space: nowrap;
     }
 
-    .drop-zone input[type="file"] {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      cursor: pointer;
-      width: 100%;
-      height: 100%;
+    .btn-search:hover { background: #3451d1; }
+    .btn-search:active { transform: scale(0.98); }
+
+    /* CONTENUTO */
+    .content {
+      max-width: 800px;
+      margin: 24px auto;
+      padding: 0 16px 40px;
     }
 
-    .drop-icon {
-      font-size: 2.4rem;
+    /* STATO / MESSAGGI */
+    .stato-msg {
+      text-align: center;
+      padding: 60px 20px;
+      color: #888;
+    }
+
+    .stato-msg .icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .stato-msg p { font-size: 0.95rem; line-height: 1.6; }
+    .stato-msg strong { color: #555; }
+
+    .loading { animation: pulse 1.2s ease-in-out infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* LISTA RISULTATI */
+    .results-count {
+      font-size: 0.85rem;
+      color: #888;
       margin-bottom: 12px;
-      display: block;
     }
 
-    .drop-text {
+    .results-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .result-item {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: all 0.15s;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 4px 16px;
+      align-items: center;
+    }
+
+    .result-item:hover {
+      border-color: #4361ee;
+      box-shadow: 0 4px 16px rgba(67,97,238,0.15);
+    }
+
+    .result-art {
+      font-weight: 700;
       font-size: 0.95rem;
-      color: var(--text);
+      color: #4361ee;
+    }
+
+    .result-desc {
+      font-size: 0.9rem;
+      color: #333;
+      grid-column: 1;
+    }
+
+    .result-meta {
+      font-size: 0.78rem;
+      color: #888;
+      grid-column: 1;
+    }
+
+    .result-price {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      grid-row: 1 / 4;
+      grid-column: 2;
+      text-align: right;
+      align-self: center;
+    }
+
+    /* DETTAGLIO */
+    .btn-back {
+      background: #f0f2f5;
+      color: #333;
+      padding: 8px 16px;
+      font-size: 0.875rem;
+      margin-bottom: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-back:hover { background: #e0e4eb; }
+
+    .detail-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
+
+    .article-header {
+      border-bottom: 2px solid #f0f2f5;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+
+    .article-code {
+      font-size: 0.85rem;
+      color: #4361ee;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       margin-bottom: 6px;
     }
 
-    .drop-sub {
-      font-family: var(--mono);
-      font-size: 0.75rem;
-      color: var(--muted);
-    }
-
-    /* FILE SELEZIONATO */
-    .file-selected {
-      display: none;
-      align-items: center;
-      gap: 12px;
-      background: var(--accent-dim);
-      border: 1px solid var(--accent);
-      border-radius: 10px;
-      padding: 14px 18px;
-      margin-top: 14px;
-    }
-
-    .file-selected.visible { display: flex; }
-
-    .file-icon { font-size: 1.4rem; }
-
-    .file-info { flex: 1; }
-
-    .file-name {
-      font-family: var(--mono);
-      font-size: 0.85rem;
-      color: var(--accent);
-      font-weight: 600;
-      word-break: break-all;
-    }
-
-    .file-size {
-      font-size: 0.75rem;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-
-    .btn-clear {
-      background: none;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      font-size: 1.1rem;
-      padding: 4px;
-      line-height: 1;
-      transition: color 0.2s;
-    }
-
-    .btn-clear:hover { color: var(--danger); }
-
-    /* PREVIEW FORNITORE */
-    .preview-box {
-      display: none;
-      margin-top: 14px;
-    }
-
-    .preview-box.visible { display: block; }
-
-    .preview-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: #1e2330;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 16px;
-    }
-
-    .preview-label {
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      white-space: nowrap;
-    }
-
-    .preview-value {
-      font-family: var(--mono);
-      font-size: 0.9rem;
-      color: var(--warn);
-      font-weight: 600;
-    }
-
-    .preview-count {
-      margin-left: auto;
-      font-family: var(--mono);
-      font-size: 0.78rem;
-      color: var(--muted);
-    }
-
-    /* BOTTONE IMPORT */
-    .btn-import {
-      width: 100%;
-      background: var(--accent);
-      color: #0a0e14;
-      border: none;
-      border-radius: 10px;
-      padding: 16px;
-      font-family: var(--mono);
-      font-size: 1rem;
+    .article-desc {
+      font-size: 1.25rem;
       font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-top: 20px;
-      letter-spacing: 0.02em;
+      color: #1a1a2e;
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+
+    .article-meta {
       display: flex;
-      align-items: center;
-      justify-content: center;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
-    .btn-import:hover:not(:disabled) {
-      background: #6af5b0;
-      box-shadow: 0 0 24px var(--accent-glow);
-      transform: translateY(-1px);
-    }
-
-    .btn-import:disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    /* LOG CONSOLE */
-    .log-card { display: none; }
-    .log-card.visible { display: block; }
-
-    .log-console {
-      background: #0a0e14;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px;
-      font-family: var(--mono);
+    .meta-tag {
+      background: #f0f2f5;
+      border-radius: 6px;
+      padding: 4px 10px;
       font-size: 0.8rem;
-      line-height: 1.8;
-      max-height: 280px;
-      overflow-y: auto;
+      color: #555;
     }
 
-    .log-line { display: flex; gap: 10px; }
-    .log-time { color: var(--muted); white-space: nowrap; }
-    .log-msg.ok    { color: var(--accent); }
-    .log-msg.info  { color: var(--text); }
-    .log-msg.warn  { color: var(--warn); }
-    .log-msg.error { color: var(--danger); }
-
-    /* PROGRESS BAR */
-    .progress-wrap {
-      background: var(--border);
-      border-radius: 4px;
-      height: 4px;
-      margin-top: 16px;
-      overflow: hidden;
-      display: none;
+    .article-update {
+      font-size: 0.75rem;
+      color: #aaa;
+      margin-top: 10px;
     }
 
-    .progress-wrap.visible { display: block; }
-
-    .progress-bar {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 4px;
-      transition: width 0.3s ease;
-      box-shadow: 0 0 8px var(--accent-glow);
-      width: 0%;
-    }
-
-    /* RISULTATO FINALE */
-    .result-banner {
-      display: none;
-      border-radius: 10px;
-      padding: 16px 20px;
-      margin-top: 16px;
-      font-family: var(--mono);
-      font-size: 0.88rem;
-      align-items: center;
+    /* GRIGLIA PREZZI */
+    .prezzi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 12px;
     }
 
-    .result-banner.visible { display: flex; }
-    .result-banner.success { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); }
-    .result-banner.error   { background: var(--danger-dim); border: 1px solid var(--danger); color: var(--danger); }
-
-    .result-icon { font-size: 1.3rem; }
-
-    /* RESPONSIVE */
     @media (max-width: 480px) {
-      .page-title { font-size: 1.2rem; }
-      .card { padding: 20px; }
-      .drop-zone { padding: 30px 16px; }
+      .prezzi-grid { grid-template-columns: 1fr; }
+      .header h1 { display: none; }
+    }
+
+    .prezzo-card {
+      border-radius: 12px;
+      padding: 16px 18px;
+      text-align: center;
+    }
+
+    .prezzo-card.base {
+      background: #1a1a2e;
+      color: white;
+      grid-column: 1 / -1;
+    }
+
+    .prezzo-card.chn         { background: #eef2ff; border: 2px solid #c7d2fe; }
+    .prezzo-card.interventi  { background: #fff7ed; border: 2px solid #fed7aa; }
+    .prezzo-card.fabbro      { background: #f0fdf4; border: 2px solid #bbf7d0; }
+    .prezzo-card.minimo      { background: #fef2f2; border: 2px solid #fecaca; }
+
+    .prezzo-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .prezzo-card.base .prezzo-label { color: rgba(255,255,255,0.7); }
+    .prezzo-card.chn .prezzo-label         { color: #4338ca; }
+    .prezzo-card.interventi .prezzo-label  { color: #c2410c; }
+    .prezzo-card.fabbro .prezzo-label      { color: #166534; }
+    .prezzo-card.minimo .prezzo-label      { color: #b91c1c; }
+
+    .prezzo-valore {
+      font-size: 1.9rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .prezzo-card.base .prezzo-valore       { color: white; font-size: 2.2rem; }
+    .prezzo-card.chn .prezzo-valore        { color: #3730a3; }
+    .prezzo-card.interventi .prezzo-valore { color: #c2410c; }
+    .prezzo-card.fabbro .prezzo-valore     { color: #166534; }
+    .prezzo-card.minimo .prezzo-valore     { color: #b91c1c; }
+
+    .prezzo-moltiplicatore {
+      font-size: 0.72rem;
+      opacity: 0.55;
+      margin-top: 5px;
     }
   </style>
 </head>
 <body>
 
-<div class="container">
-
-  <div class="page-header">
-    <div class="page-title">// import<span>_listini</span></div>
-    <a href="index.html" class="back-link">← torna alla ricerca</a>
-  </div>
-
-  <!-- CARD UPLOAD -->
-  <div class="card">
-    <div class="card-label">01 — Seleziona file Excel</div>
-
-    <div class="drop-zone" id="drop-zone">
-      <input type="file" id="file-input" accept=".xlsx,.xls">
-      <span class="drop-icon">📂</span>
-      <div class="drop-text">Trascina il file Excel qui</div>
-      <div class="drop-sub">oppure clicca per selezionare · .xlsx / .xls</div>
-    </div>
-
-    <div class="file-selected" id="file-selected">
-      <span class="file-icon">📊</span>
-      <div class="file-info">
-        <div class="file-name" id="file-name">—</div>
-        <div class="file-size" id="file-size">—</div>
-      </div>
-      <button class="btn-clear" onclick="clearFile()" title="Rimuovi file">✕</button>
-    </div>
-
-    <div class="preview-box" id="preview-box">
-      <div class="preview-row">
-        <span class="preview-label">Fornitore rilevato</span>
-        <span class="preview-value" id="preview-fornitore">—</span>
-        <span class="preview-count" id="preview-count">—</span>
-      </div>
+<div class="header">
+  <div class="header-inner">
+    <h1>📋 Listini</h1>
+    <div class="search-bar">
+      <input type="text" id="search-input"
+             placeholder="Codice, EAN oppure %ricerca libera..."
+             onkeydown="if(event.key==='Enter') doSearch()"
+             autofocus autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="btn-search" onclick="doSearch()">Cerca</button>
     </div>
   </div>
+</div>
 
-  <!-- CARD AZIONE -->
-  <div class="card">
-    <div class="card-label">02 — Avvia importazione</div>
-    <p style="font-size:0.85rem; color:var(--muted); line-height:1.6; margin-bottom:4px;">
-      Tutti i record esistenti del fornitore verranno <strong style="color:var(--danger)">eliminati</strong>
-      e sostituiti con i dati del file caricato.
-    </p>
-    <button class="btn-import" id="btn-import" disabled onclick="avviaImport()">
-      <span id="btn-label">⚡ Importa listino</span>
-    </button>
-
-    <div class="progress-wrap" id="progress-wrap">
-      <div class="progress-bar" id="progress-bar"></div>
-    </div>
-
-    <div class="result-banner" id="result-banner">
-      <span class="result-icon" id="result-icon"></span>
-      <span id="result-text"></span>
-    </div>
+<div class="content" id="main-content">
+  <div class="stato-msg">
+    <div class="icon">🔍</div>
+    <p>Cerca per <strong>codice articolo</strong> o <strong>EAN</strong><br>
+       Usa <strong>%testo</strong> per ricerca parziale sul codice</p>
   </div>
-
-  <!-- LOG -->
-  <div class="card log-card" id="log-card">
-    <div class="card-label">03 — Log operazione</div>
-    <div class="log-console" id="log-console"></div>
-  </div>
-
 </div>
 
 <script>
   // ============================================================
-  // CONFIGURAZIONE — stessi valori di index.html
+  // CONFIGURAZIONE — sostituisci con i tuoi valori Supabase
   // ============================================================
-  const SUPABASE_URL      = 'https://dltokkmmgiqcearzapzf.supabase.co';  // ← sostituisci
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsdG9ra21tZ2lxY2VhcnphcHpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NzE4MjcsImV4cCI6MjA5MjI0NzgyN30.Aokl-GKXauodlJW7SgUBuYVh8l2tzJGm1rnlSFQ5djE';             // ← sostituisci
-  // Usa la SERVICE ROLE KEY qui sotto per poter scrivere/cancellare
-  const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsdG9ra21tZ2lxY2VhcnphcHpmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjY3MTgyNywiZXhwIjoyMDkyMjQ3ODI3fQ.nH0V7hZSP_OKsCDJC7begBg4VwAe0GplWhVgedryDtA';  // ← sostituisci
+  const SUPABASE_URL     = 'https://dltokkmmgiqcearzapzf.supabase.co';  // ← sostituisci
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsdG9ra21tZ2lxY2VhcnphcHpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NzE4MjcsImV4cCI6MjA5MjI0NzgyN30.Aokl-GKXauodlJW7SgUBuYVh8l2tzJGm1rnlSFQ5djE';            // ← sostituisci
 
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  },
-  db: {
-    schema: 'public'
-  }
-});
-  // ============================================================
-  // STATO
-  // ============================================================
-  let fileData    = null;   // ArrayBuffer del file
-  let prodottiParsati = []; // righe elaborate
-  let fornitoreName = '';
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // ============================================================
-  // DRAG & DROP + INPUT FILE
+  // RICERCA
   // ============================================================
-  const dropZone  = document.getElementById('drop-zone');
-  const fileInput = document.getElementById('file-input');
+  async function doSearch() {
+    const query = document.getElementById('search-input').value.trim();
+    if (!query) return;
 
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    const f = e.dataTransfer.files[0];
-    if (f) handleFile(f);
-  });
+    const content = document.getElementById('main-content');
+    content.innerHTML = '<div class="stato-msg loading"><div class="icon">⏳</div><p>Ricerca in corso...</p></div>';
 
-  fileInput.addEventListener('change', e => {
-    if (e.target.files[0]) handleFile(e.target.files[0]);
-  });
-
-  function handleFile(file) {
-    const ext = file.name.split('.').pop().toLowerCase();
-    if (!['xlsx','xls'].includes(ext)) {
-      showResult('error', '❌', 'Formato non supportato. Usa un file .xlsx o .xls');
-      return;
-    }
-
-    // Mostra info file
-    document.getElementById('file-name').textContent = file.name;
-    document.getElementById('file-size').textContent = formatBytes(file.size);
-    document.getElementById('file-selected').classList.add('visible');
-
-    // Leggi e analizza
-    const reader = new FileReader();
-    reader.onload = e => {
-      fileData = e.target.result;
-      parseExcel(fileData);
-    };
-    reader.readAsArrayBuffer(file);
-  }
-
-  function clearFile() {
-    fileData = null;
-    prodottiParsati = [];
-    fornitoreName = '';
-    fileInput.value = '';
-    document.getElementById('file-selected').classList.remove('visible');
-    document.getElementById('preview-box').classList.remove('visible');
-    document.getElementById('btn-import').disabled = true;
-    document.getElementById('result-banner').classList.remove('visible');
-    document.getElementById('log-card').classList.remove('visible');
-    document.getElementById('log-console').innerHTML = '';
-  }
-
-  // ============================================================
-  // PARSING EXCEL
-  // ============================================================
-  function parseExcel(buffer) {
     try {
-      const wb    = XLSX.read(buffer, { type: 'array', cellDates: true });
-      const ws    = wb.Sheets[wb.SheetNames[0]];
-      const righe = XLSX.utils.sheet_to_json(ws, { defval: null });
+      let dbQuery = supabaseClient.from('prodotti').select('*');
 
-      if (!righe.length) {
-        showResult('error', '❌', 'Il file sembra vuoto o non ha righe di dati.');
+      if (query.startsWith('%')) {
+        // Ricerca parziale LIKE sul codice articolo
+        const term = query.slice(1);
+        dbQuery = dbQuery.ilike('art', `%${term}%`);
+      } else if (/^\d{8,14}$/.test(query)) {
+        // EAN: solo cifre, 8-14 caratteri
+        dbQuery = dbQuery.or(`ean.eq.${query},art.eq.${query}`);
+      } else {
+        // Codice articolo esatto
+        dbQuery = dbQuery.eq('art', query);
+      }
+
+      const { data, error } = await dbQuery.order('fornitore').limit(100);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        content.innerHTML = '<div class="stato-msg"><div class="icon">😕</div><p>Nessun articolo trovato</p></div>';
         return;
       }
 
-      // Mappa colonne → oggetti DB
-      prodottiParsati = righe.map(r => ({
-        art:                parseStr(r['ART']),
-        descrizione:        parseStr(r['DESCRIZIONE']),
-        um:                 parseStr(r['UM']),
-        prezzo:             parseNum(r['PREZZO']),
-        sconto1:            parseNum(r['SCONTO1']),
-        sconto2:            parseNum(r['SCONTO2']),
-        categoria:          parseStr(r['CAT MERCE']),
-        ean:                parseStr(r['EAN']),
-        fornitore:          parseStr(r['FORNITORE']),
-        data_aggiornamento: parseData(r['DATA ULTIMO AGGIORNAMENTO'])
-      })).filter(p => p.art); // scarta righe senza codice articolo
-
-      // Rileva il fornitore (prima riga non nulla)
-      const primoFornitore = prodottiParsati.find(p => p.fornitore)?.fornitore;
-      if (!primoFornitore) {
-        showResult('error', '❌', 'Colonna FORNITORE non trovata o vuota nel file.');
-        return;
+      if (data.length === 1) {
+        showDettaglio(data[0]);
+      } else {
+        showListaRisultati(data);
       }
 
-      fornitoreName = primoFornitore;
-      document.getElementById('preview-fornitore').textContent = fornitoreName;
-      document.getElementById('preview-count').textContent = `${prodottiParsati.length} righe`;
-      document.getElementById('preview-box').classList.add('visible');
-      document.getElementById('btn-import').disabled = false;
-
-    } catch(e) {
-      showResult('error', '❌', `Errore lettura file: ${e.message}`);
+    } catch (e) {
+      content.innerHTML = `<div class="stato-msg"><div class="icon">⚠️</div><p>Errore: ${e.message}</p></div>`;
     }
   }
 
   // ============================================================
-  // IMPORT
+  // LISTA RISULTATI MULTIPLI
   // ============================================================
-  async function avviaImport() {
-    if (!prodottiParsati.length || !fornitoreName) return;
+  function showListaRisultati(items) {
+    const content = document.getElementById('main-content');
 
-    // Reset UI
-    document.getElementById('btn-import').disabled = true;
-    document.getElementById('btn-label').textContent = '⏳ Importazione in corso...';
-    document.getElementById('result-banner').classList.remove('visible');
-    document.getElementById('log-card').classList.add('visible');
-    document.getElementById('log-console').innerHTML = '';
-    setProgress(0);
+    const rows = items.map(item => `
+      <div class="result-item" onclick='showDettaglio(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+        <div class="result-art">${esc(item.art || '—')}</div>
+        <div class="result-desc">${esc(item.descrizione || '—')}</div>
+        <div class="result-meta">${esc(item.fornitore || '')}${item.um ? ' · ' + esc(item.um) : ''}</div>
+        <div class="result-price">€ ${fmt(item.prezzo)}</div>
+      </div>
+    `).join('');
 
-    log('info', `Avvio importazione per: ${fornitoreName}`);
-    log('info', `Righe da importare: ${prodottiParsati.length}`);
-
-    try {
-      // STEP 1 — Elimina vecchi record
-      log('warn', `Eliminazione vecchi dati di "${fornitoreName}"...`);
-    const { error: delErr } = await sb
-  .from('prodotti')
-  .delete()
-  .eq('fornitore', fornitoreName);
-
-console.log('DEL ERROR:', JSON.stringify(delErr));
-console.log('FORNITORE:', fornitoreName);
-console.log('URL:', SUPABASE_URL);
-
-// Ignora l'errore se non c'era nulla da cancellare
-if (delErr && !delErr.message.includes('0 rows')) {
-  throw new Error(`Eliminazione fallita: ${delErr.message}`);
-}
-log('ok', 'Vecchi dati eliminati (o nessun dato precedente) ✓');
-
-      if (delErr) throw new Error(`Eliminazione fallita: ${delErr.message}`);
-      log('ok', 'Vecchi dati eliminati ✓');
-      setProgress(20);
-
-      // STEP 2 — Inserisci in batch da 500
-      const BATCH = 500;
-      const totale = prodottiParsati.length;
-      let inseriti = 0;
-
-      for (let i = 0; i < totale; i += BATCH) {
-        const batch = prodottiParsati.slice(i, i + BATCH);
-        const { error: insErr } = await sb.from('prodotti').insert(batch);
-        if (insErr) throw new Error(`Inserimento batch fallito: ${insErr.message}`);
-        inseriti += batch.length;
-        const pct = 20 + Math.round((inseriti / totale) * 80);
-        setProgress(pct);
-        log('info', `Inseriti ${inseriti} / ${totale} record...`);
-      }
-
-      setProgress(100);
-      log('ok', `✅ Importazione completata! ${totale} prodotti caricati.`);
-      showResult('success', '✅', `${totale} prodotti di "${fornitoreName}" importati con successo`);
-
-    } catch(e) {
-      log('error', `ERRORE: ${e.message}`);
-      showResult('error', '❌', e.message);
-    } finally {
-      document.getElementById('btn-label').textContent = '⚡ Importa listino';
-      document.getElementById('btn-import').disabled = false;
-    }
+    content.innerHTML = `
+      <div class="results-count">${items.length} risultati trovati</div>
+      <div class="results-list">${rows}</div>
+    `;
   }
 
   // ============================================================
-  // HELPERS UI
+  // DETTAGLIO ARTICOLO + LISTINI
   // ============================================================
-  function log(tipo, msg) {
-    const console = document.getElementById('log-console');
-    const now = new Date().toLocaleTimeString('it-IT');
-    const line = document.createElement('div');
-    line.className = 'log-line';
-    line.innerHTML = `<span class="log-time">${now}</span><span class="log-msg ${tipo}">${msg}</span>`;
-    console.appendChild(line);
-    console.scrollTop = console.scrollHeight;
-  }
+  function showDettaglio(item) {
+    const content = document.getElementById('main-content');
+    const p = parseFloat(item.prezzo) || 0;
 
-  function setProgress(pct) {
-    document.getElementById('progress-wrap').classList.add('visible');
-    document.getElementById('progress-bar').style.width = pct + '%';
-  }
+    const prezzi = [
+      { label: 'Prezzo Base',         valore: p,        classe: 'base',       molt: '× 1.00' },
+      { label: 'CHN Ufficiale',        valore: p * 1.05, classe: 'chn',        molt: '× 1.05' },
+      { label: 'Interventi Esterni',   valore: p * 1.25, classe: 'interventi', molt: '× 1.25' },
+      { label: 'Fabbro',               valore: p * 0.73, classe: 'fabbro',     molt: '× 0.73' },
+      { label: 'Minimo Vendita',       valore: p * 0.68, classe: 'minimo',     molt: '× 0.68' },
+    ];
 
-  function showResult(tipo, icon, msg) {
-    const banner = document.getElementById('result-banner');
-    banner.className = `result-banner visible ${tipo}`;
-    document.getElementById('result-icon').textContent = icon;
-    document.getElementById('result-text').textContent = msg;
+    const prezziHtml = prezzi.map(pr => `
+      <div class="prezzo-card ${pr.classe}">
+        <div class="prezzo-label">${pr.label}</div>
+        <div class="prezzo-valore">€ ${fmt(pr.valore)}</div>
+        <div class="prezzo-moltiplicatore">${pr.molt}</div>
+      </div>
+    `).join('');
+
+    content.innerHTML = `
+      <button class="btn-back" onclick="document.getElementById('search-input').focus(); document.getElementById('search-input').select()">
+        ← Nuova ricerca
+      </button>
+      <div class="detail-card">
+        <div class="article-header">
+          <div class="article-code">${esc(item.art || '—')}</div>
+          <div class="article-desc">${esc(item.descrizione || '—')}</div>
+          <div class="article-meta">
+            ${item.um        ? `<span class="meta-tag">📦 ${esc(item.um)}</span>`         : ''}
+            ${item.fornitore ? `<span class="meta-tag">🏭 ${esc(item.fornitore)}</span>`  : ''}
+            ${item.categoria ? `<span class="meta-tag">🏷️ ${esc(item.categoria)}</span>` : ''}
+            ${item.ean       ? `<span class="meta-tag">🔢 ${esc(item.ean)}</span>`        : ''}
+          </div>
+          ${item.data_aggiornamento
+            ? `<div class="article-update">Aggiornato: ${esc(item.data_aggiornamento)}</div>`
+            : ''}
+        </div>
+        <div class="prezzi-grid">${prezziHtml}</div>
+      </div>
+    `;
   }
 
   // ============================================================
-  // PARSING DATI
+  // UTILITY
   // ============================================================
-  function parseStr(v) {
-    if (v === null || v === undefined) return null;
-    const s = String(v).trim();
-    return s === '' ? null : s;
+  function fmt(n) {
+    const num = parseFloat(n);
+    if (isNaN(num)) return '—';
+    return num.toFixed(2).replace('.', ',');
   }
 
-  function parseNum(v) {
-    if (v === null || v === undefined || v === '') return null;
-    const n = parseFloat(String(v).replace(',', '.'));
-    return isNaN(n) ? null : n;
-  }
-
-  function parseData(v) {
-    if (!v) return null;
-    if (v instanceof Date) {
-      return v.toISOString().split('T')[0]; // YYYY-MM-DD
-    }
-    return String(v).trim();
-  }
-
-  function formatBytes(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024*1024)).toFixed(1) + ' MB';
+  function esc(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 </script>
 </body>
