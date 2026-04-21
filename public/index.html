@@ -357,6 +357,28 @@
   // ============================================================
   // SCANNER BARCODE — html5-qrcode
   // ============================================================
+  html5QrCode.start(
+  {
+    facingMode: "environment"
+  },
+  {
+    fps: 15,
+    qrbox: { width: 280, height: 120 }, // più stretto → meglio per barcode
+    aspectRatio: 1.777,
+    experimentalFeatures: {
+      useBarCodeDetectorIfSupported: true // 🔥 importantissimo
+    },
+    videoConstraints: {
+      focusMode: "continuous",
+      width: { ideal: 1920 },
+      height: { ideal: 1080 }
+    }
+  },
+
+
+
+
+  
   var html5QrCode = null;
   var scannerRunning = false;
 
