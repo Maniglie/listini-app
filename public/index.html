@@ -346,120 +346,93 @@
 </div>
 
 <script>
- // ============================================================
+  // ============================================================
   // CONFIGURAZIONE — sostituisci con i tuoi valori Supabase
   // ============================================================
-  const SUPABASE_URL     = 'https://dltokkmmgiqcearzapzf.supabase.co';  // ← sostituisci
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsdG9ra21tZ2lxY2VhcnphcHpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NzE4MjcsImV4cCI6MjA5MjI0NzgyN30.Aokl-GKXauodlJW7SgUBuYVh8l2tzJGm1rnlSFQ5djE';            // ← sostituisci
+  var SUPABASE_URL      = 'https://TUO-PROGETTO.supabase.co';  // ← sostituisci
+  var SUPABASE_ANON_KEY = 'eyJ...TUA_ANON_KEY...';             // ← sostituisci
 
   var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // ============================================================
-// SCANNER BARCODE — html5-qrcode (VERSIONE STABILE)
-// ============================================================
+  // SCANNER BARCODE — html5-qrcode
+  // ============================================================
+  var html5QrCode = null;
+  var scannerRunning = false;
 
-let html5QrCode = null;
-let scannerRunning = false;
-
-function toggleScanner() {
-  if (scannerRunning) {
-    stopScanner();
-  } else {
-    startScanner();
-  }
-}
-
-function startScanner() {
-  if (scannerRunning) return; // evita doppio avvio
-
-  const container = document.getElementById('scanner-container');
-  const btn = document.getElementById('btn-scan');
-
-  container.classList.add('active');
-  btn.classList.add('active');
-  btn.textContent = '✕';
-
-  html5QrCode = new Html5Qrcode('reader');
-
-  const cameraConfig = {
-    facingMode: "environment",
-    width: { ideal: 1920 },
-    height: { ideal: 1080 },
-    advanced: [{ zoom: 2.0 }], // utile Android
-    focusMode: "continuous"
-  };
-
-  const config = {
-    fps: 15,
-    qrbox: { width: 300, height: 120 }, // rettangolo = meglio barcode
-    aspectRatio: 1.777,
-
-    experimentalFeatures: {
-      useBarCodeDetectorIfSupported: true
-    },
-
-    formatsToSupport: [
-      Html5QrcodeSupportedFormats.EAN_13,
-      Html5QrcodeSupportedFormats.EAN_8,
-      Html5QrcodeSupportedFormats.CODE_128,
-      Html5QrcodeSupportedFormats.CODE_39,
-      Html5QrcodeSupportedFormats.UPC_A,
-      Html5QrcodeSupportedFormats.UPC_E,
-      Html5QrcodeSupportedFormats.ITF
-    ]
-  };
-
-  html5QrCode.start(
-    cameraConfig,
-    config,
-    (decodedText) => {
-      const codice = decodedText.replace(/\s+/g, '');
-
-      document.getElementById('search-input').value = codice;
-
-      if (navigator.vibrate) navigator.vibrate(80);
-
+  function toggleScanner() {
+    if (scannerRunning) {
       stopScanner();
-      doSearch();
+    } else {
+      startScanner();
     }
-  ).then(() => {
+  }
+
+  function startScanner() {
+    var container = document.getElementById('scanner-container');
+    var btn = document.getElementById('btn-scan');
+
+    container.classList.add('active');
+    btn.classList.add('active');
+    btn.textContent = '✕';
+
+    html5QrCode = new Html5Qrcode('reader');
+
+    var config = {
+      fps: 10,
+      qrbox: { width: 280, height: 140 },
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.ITF,
+      ]
+    };
+
+    html5QrCode.start(
+      { facingMode: 'environment' },
+      config,
+      function(decodedText) {
+        // Codice letto — pulisce spazi e cerca
+        var codice = decodedText.replace(/\s+/g, '');
+        document.getElementById('search-input').value = codice;
+
+        // Vibrazione feedback (Android)
+        if (navigator.vibrate) navigator.vibrate(80);
+
+        stopScanner();
+        doSearch();
+      }
+    ).catch(function(err) {
+      stopScanner();
+      alert('Impossibile accedere alla fotocamera.\nVerifica i permessi nelle impostazioni del browser.');
+    });
+
     scannerRunning = true;
-  }).catch((err) => {
-    console.error(err);
-    stopScanner();
-    alert('Impossibile accedere alla fotocamera.\nControlla i permessi del browser.');
-  });
-}
+  }
 
-function stopScanner() {
-  const container = document.getElementById('scanner-container');
-  const btn = document.getElementById('btn-scan');
+  function stopScanner() {
+    var btn = document.getElementById('btn-scan');
+    btn.classList.remove('active');
+    btn.textContent = '📷';
 
-  btn.classList.remove('active');
-  btn.textContent = '📷';
-
-  if (html5QrCode && scannerRunning) {
-    html5QrCode.stop()
-      .then(() => {
-        html5QrCode.clear();
+    if (html5QrCode && scannerRunning) {
+      html5QrCode.stop().then(function() {
+        document.getElementById('scanner-container').classList.remove('active');
         html5QrCode = null;
-        container.classList.remove('active');
-        scannerRunning = false;
-      })
-      .catch(() => {
+      }).catch(function() {
+        document.getElementById('scanner-container').classList.remove('active');
         html5QrCode = null;
-        container.classList.remove('active');
-        scannerRunning = false;
       });
-  } else {
-    container.classList.remove('active');
+    } else {
+      document.getElementById('scanner-container').classList.remove('active');
+    }
+
     scannerRunning = false;
   }
-}
-
-
-
-  
 
   // ============================================================
   // RICERCA
