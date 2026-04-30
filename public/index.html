@@ -75,7 +75,7 @@
     .header {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 14px 20px;
+      padding: 12px 16px;
       position: sticky;
       top: 0;
       z-index: 100;
@@ -87,7 +87,7 @@
       margin: 0 auto;
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
     }
 
     .logo {
@@ -118,6 +118,7 @@
       color: var(--text-muted);
       pointer-events: none;
       transition: color var(--transition);
+      z-index: 1;
     }
 
     .search-wrap:focus-within .search-icon { color: var(--accent); }
@@ -133,6 +134,7 @@
       color: var(--text-primary);
       outline: none;
       transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+      min-width: 0;
     }
 
     #search-input::placeholder { color: var(--text-muted); }
@@ -169,6 +171,45 @@
     }
 
     .btn-search:active { transform: scale(0.97) translateY(0); }
+
+    /* ─── MOBILE PORTRAIT: header a due righe ─── */
+    @media (max-width: 540px) {
+      .header {
+        padding: 10px 12px;
+      }
+
+      .header-inner {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .logo {
+        flex: 1;
+        font-size: 0.95rem;
+      }
+
+      /* Il btn-scan va accanto al logo nella prima riga */
+      .btn-scan {
+        order: 2;
+      }
+
+      /* La search-wrap occupa tutta la seconda riga */
+      .search-wrap {
+        order: 3;
+        flex-basis: 100%;
+        gap: 8px;
+      }
+
+      #search-input {
+        font-size: 1rem;       /* evita lo zoom automatico di iOS */
+        padding: 12px 14px 12px 42px;
+      }
+
+      .btn-search {
+        padding: 12px 18px;
+        font-size: 0.92rem;
+      }
+    }
 
     /* ─── CONTENT ─── */
     .content {
@@ -391,7 +432,6 @@
 
     @media (max-width: 480px) {
       .prezzi-grid { grid-template-columns: 1fr; }
-      .logo span { display: none; }
     }
 
     .prezzo-card {
