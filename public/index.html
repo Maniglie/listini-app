@@ -396,45 +396,50 @@
 
     .prezzo-card {
       border-radius: var(--radius);
-      padding: 18px;
       position: relative;
-      overflow: hidden;
       text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: transform var(--transition), box-shadow var(--transition);
+      transition: box-shadow var(--transition);
     }
 
-    .prezzo-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-    }
+    .prezzo-card:hover { box-shadow: var(--shadow-md); }
 
-    .prezzo-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      border-radius: var(--radius) var(--radius) 0 0;
-    }
+    .prezzo-card.base { grid-column: 1 / -1; }
 
-    .prezzo-card.base {
+    /* Fronte colori */
+    .prezzo-card.base .prezzo-card-front {
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       color: white;
-      grid-column: 1 / -1;
     }
+    .prezzo-card.base .prezzo-card-front::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; border-radius: var(--radius) var(--radius) 0 0;
+      background: linear-gradient(90deg, #4f8bff, #60efff);
+    }
+    .prezzo-card.chn .prezzo-card-front        { background: #eef2ff; border: 1.5px solid #c7d2fe; }
+    .prezzo-card.interventi .prezzo-card-front { background: #fff7ed; border: 1.5px solid #fed7aa; }
+    .prezzo-card.fabbro .prezzo-card-front     { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
+    .prezzo-card.minimo .prezzo-card-front     { background: #fef2f2; border: 1.5px solid #fecaca; }
 
-    .prezzo-card.base::before  { background: linear-gradient(90deg, #4f8bff, #60efff); }
-    .prezzo-card.chn::before        { background: #6366f1; }
-    .prezzo-card.interventi::before { background: #f97316; }
-    .prezzo-card.fabbro::before     { background: #22c55e; }
-    .prezzo-card.minimo::before     { background: #ef4444; }
-
-    .prezzo-card.chn        { background: #eef2ff; border: 1.5px solid #c7d2fe; }
-    .prezzo-card.interventi { background: #fff7ed; border: 1.5px solid #fed7aa; }
-    .prezzo-card.fabbro     { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
-    .prezzo-card.minimo     { background: #fef2f2; border: 1.5px solid #fecaca; }
+    .prezzo-card.chn .prezzo-card-front::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; border-radius: var(--radius) var(--radius) 0 0;
+      background: #6366f1;
+    }
+    .prezzo-card.interventi .prezzo-card-front::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; border-radius: var(--radius) var(--radius) 0 0;
+      background: #f97316;
+    }
+    .prezzo-card.fabbro .prezzo-card-front::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; border-radius: var(--radius) var(--radius) 0 0;
+      background: #22c55e;
+    }
+    .prezzo-card.minimo .prezzo-card-front::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; border-radius: var(--radius) var(--radius) 0 0;
+      background: #ef4444;
+    }
 
     .prezzo-header {
       display: flex;
@@ -453,11 +458,18 @@
       flex-shrink: 0;
     }
 
-    .prezzo-card.base .prezzo-icon        { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
-    .prezzo-card.chn .prezzo-icon         { background: #e0e7ff; color: #4338ca; }
-    .prezzo-card.interventi .prezzo-icon  { background: #ffedd5; color: #c2410c; }
-    .prezzo-card.fabbro .prezzo-icon      { background: #dcfce7; color: #166534; }
-    .prezzo-card.minimo .prezzo-icon      { background: #fee2e2; color: #b91c1c; }
+    /* Icons - front */
+    .prezzo-card.base .prezzo-card-front .prezzo-icon        { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
+    .prezzo-card.chn .prezzo-card-front .prezzo-icon         { background: #e0e7ff; color: #4338ca; }
+    .prezzo-card.interventi .prezzo-card-front .prezzo-icon  { background: #ffedd5; color: #c2410c; }
+    .prezzo-card.fabbro .prezzo-card-front .prezzo-icon      { background: #dcfce7; color: #166534; }
+    .prezzo-card.minimo .prezzo-card-front .prezzo-icon      { background: #fee2e2; color: #b91c1c; }
+    /* Icons - back */
+    .prezzo-card.base .prezzo-card-back .prezzo-icon        { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); }
+    .prezzo-card.chn .prezzo-card-back .prezzo-icon         { background: #c7d2fe; color: #3730a3; }
+    .prezzo-card.interventi .prezzo-card-back .prezzo-icon  { background: #fde68a; color: #92400e; }
+    .prezzo-card.fabbro .prezzo-card-back .prezzo-icon      { background: #bbf7d0; color: #14532d; }
+    .prezzo-card.minimo .prezzo-card-back .prezzo-icon      { background: #fecaca; color: #991b1b; }
 
     .prezzo-label {
       font-size: 0.73rem;
@@ -466,11 +478,18 @@
       letter-spacing: 0.07em;
     }
 
-    .prezzo-card.base .prezzo-label        { color: rgba(255,255,255,0.55); }
-    .prezzo-card.chn .prezzo-label         { color: #4338ca; }
-    .prezzo-card.interventi .prezzo-label  { color: #c2410c; }
-    .prezzo-card.fabbro .prezzo-label      { color: #166534; }
-    .prezzo-card.minimo .prezzo-label      { color: #b91c1c; }
+    /* Labels - front */
+    .prezzo-card.base .prezzo-card-front .prezzo-label        { color: rgba(255,255,255,0.55); }
+    .prezzo-card.chn .prezzo-card-front .prezzo-label         { color: #4338ca; }
+    .prezzo-card.interventi .prezzo-card-front .prezzo-label  { color: #c2410c; }
+    .prezzo-card.fabbro .prezzo-card-front .prezzo-label      { color: #166534; }
+    .prezzo-card.minimo .prezzo-card-front .prezzo-label      { color: #b91c1c; }
+    /* Labels - back */
+    .prezzo-card.base .prezzo-card-back .prezzo-label        { color: rgba(255,255,255,0.55); }
+    .prezzo-card.chn .prezzo-card-back .prezzo-label         { color: #3730a3; }
+    .prezzo-card.interventi .prezzo-card-back .prezzo-label  { color: #92400e; }
+    .prezzo-card.fabbro .prezzo-card-back .prezzo-label      { color: #14532d; }
+    .prezzo-card.minimo .prezzo-card-back .prezzo-label      { color: #991b1b; }
 
     .prezzo-valore {
       font-size: 1.9rem;
@@ -488,11 +507,18 @@
       opacity: 0.7;
     }
 
-    .prezzo-card.base .prezzo-valore { color: white; font-size: 2.3rem; }
-    .prezzo-card.chn .prezzo-valore        { color: #3730a3; }
-    .prezzo-card.interventi .prezzo-valore { color: #c2410c; }
-    .prezzo-card.fabbro .prezzo-valore     { color: #166534; }
-    .prezzo-card.minimo .prezzo-valore     { color: #b91c1c; }
+    /* Valori - front */
+    .prezzo-card.base .prezzo-card-front .prezzo-valore { color: white; font-size: 2.3rem; }
+    .prezzo-card.chn .prezzo-card-front .prezzo-valore        { color: #3730a3; }
+    .prezzo-card.interventi .prezzo-card-front .prezzo-valore { color: #c2410c; }
+    .prezzo-card.fabbro .prezzo-card-front .prezzo-valore     { color: #166534; }
+    .prezzo-card.minimo .prezzo-card-front .prezzo-valore     { color: #b91c1c; }
+    /* Valori - back */
+    .prezzo-card.base .prezzo-card-back .prezzo-valore { color: white; font-size: 2.3rem; }
+    .prezzo-card.chn .prezzo-card-back .prezzo-valore        { color: #312e81; }
+    .prezzo-card.interventi .prezzo-card-back .prezzo-valore { color: #92400e; }
+    .prezzo-card.fabbro .prezzo-card-back .prezzo-valore     { color: #14532d; }
+    .prezzo-card.minimo .prezzo-card-back .prezzo-valore     { color: #991b1b; }
 
     .prezzo-molt {
       font-size: 0.72rem;
@@ -500,6 +526,96 @@
       margin-top: 6px;
       opacity: 0.45;
     }
+
+    /* ─── FLIP CARD ─── */
+    .prezzo-card {
+      perspective: 900px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .prezzo-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 110px;
+      transform-style: preserve-3d;
+      transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: var(--radius);
+    }
+
+    .prezzo-card.base .prezzo-card-inner { min-height: 120px; }
+
+    .prezzo-card.flipped .prezzo-card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .prezzo-card-front,
+    .prezzo-card-back {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: var(--radius);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .prezzo-card-back {
+      transform: rotateY(180deg);
+    }
+
+    /* Colori retro (IVA inclusa) */
+    .prezzo-card.base .prezzo-card-back        { background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%); color: white; }
+    .prezzo-card.chn .prezzo-card-back         { background: #dde4ff; border: 1.5px solid #a5b4fc; }
+    .prezzo-card.interventi .prezzo-card-back  { background: #fef3e2; border: 1.5px solid #fbbf24; }
+    .prezzo-card.fabbro .prezzo-card-back      { background: #e8fdf0; border: 1.5px solid #86efac; }
+    .prezzo-card.minimo .prezzo-card-back      { background: #fff0f0; border: 1.5px solid #f87171; }
+
+    .prezzo-card-back .prezzo-card-back-before {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .prezzo-card.base        .prezzo-card-back-before { background: linear-gradient(90deg, #60efff, #a78bfa); }
+    .prezzo-card.chn         .prezzo-card-back-before { background: #818cf8; }
+    .prezzo-card.interventi  .prezzo-card-back-before { background: #f59e0b; }
+    .prezzo-card.fabbro      .prezzo-card-back-before { background: #4ade80; }
+    .prezzo-card.minimo      .prezzo-card-back-before { background: #f87171; }
+
+    .iva-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-radius: 4px;
+      padding: 2px 6px;
+      margin-bottom: 8px;
+      align-self: center;
+    }
+    .prezzo-card.base .iva-badge        { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.75); }
+    .prezzo-card.chn .iva-badge         { background: #c7d2fe; color: #3730a3; }
+    .prezzo-card.interventi .iva-badge  { background: #fde68a; color: #92400e; }
+    .prezzo-card.fabbro .iva-badge      { background: #bbf7d0; color: #14532d; }
+    .prezzo-card.minimo .iva-badge      { background: #fecaca; color: #991b1b; }
+
+    /* hint "tocca" visibile solo prima volta (sparisce dopo primo flip) */
+    .flip-hint {
+      position: absolute;
+      bottom: 7px;
+      right: 9px;
+      font-size: 0.6rem;
+      opacity: 0.35;
+      font-family: 'DM Mono', monospace;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .prezzo-card.flipped .flip-hint,
+    .prezzo-card.hint-done .flip-hint { opacity: 0; }
 
     /* ─── ANIMATIONS ─── */
     @keyframes fadeUp {
@@ -937,14 +1053,35 @@
       { label: 'Minimo Vendita',    valore: p * 0.68, classe: 'minimo',     molt: '× 0.68', icon: ICONS.shield  },
     ];
 
+    const IVA = 1.22;
     const prezziHtml = prezzi.map(pr => `
-      <div class="prezzo-card ${pr.classe}">
-        <div class="prezzo-header">
-          <div class="prezzo-icon">${pr.icon}</div>
-          <div class="prezzo-label">${pr.label}</div>
+      <div class="prezzo-card ${pr.classe}" onclick="this.classList.toggle('flipped'); this.classList.add('hint-done')">
+        <div class="prezzo-card-inner">
+
+          <!-- FRONTE: prezzo IVA esclusa -->
+          <div class="prezzo-card-front">
+            <div class="prezzo-header">
+              <div class="prezzo-icon">${pr.icon}</div>
+              <div class="prezzo-label">${pr.label}</div>
+            </div>
+            <div class="prezzo-valore"><span class="prezzo-currency">€</span>${fmt(pr.valore)}</div>
+            <div class="prezzo-molt">${pr.molt} · iva es.</div>
+            <span class="flip-hint">↻ iva</span>
+          </div>
+
+          <!-- RETRO: prezzo IVA inclusa -->
+          <div class="prezzo-card-back">
+            <div class="prezzo-card-back-before"></div>
+            <span class="iva-badge">IVA 22% inclusa</span>
+            <div class="prezzo-header">
+              <div class="prezzo-icon">${pr.icon}</div>
+              <div class="prezzo-label">${pr.label}</div>
+            </div>
+            <div class="prezzo-valore"><span class="prezzo-currency">€</span>${fmt(pr.valore * IVA)}</div>
+            <div class="prezzo-molt">${pr.molt} · ivato</div>
+          </div>
+
         </div>
-        <div class="prezzo-valore"><span class="prezzo-currency">€</span>${fmt(pr.valore)}</div>
-        <div class="prezzo-molt">${pr.molt}</div>
       </div>
     `).join('');
 
