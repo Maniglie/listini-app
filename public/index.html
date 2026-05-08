@@ -415,10 +415,10 @@
       height: 2px; border-radius: var(--radius) var(--radius) 0 0;
       background: linear-gradient(90deg, #4f8bff, #60efff);
     }
-    .prezzo-card.chn .prezzo-card-front        { background: #eef2ff; border: 1.5px solid #c7d2fe; }
-    .prezzo-card.interventi .prezzo-card-front { background: #fff7ed; border: 1.5px solid #fed7aa; }
-    .prezzo-card.fabbro .prezzo-card-front     { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
-    .prezzo-card.minimo .prezzo-card-front     { background: #fef2f2; border: 1.5px solid #fecaca; }
+    .prezzo-card.chn .prezzo-card-front        { background: #e0e7ff; border: 1.5px solid #a5b4fc; }
+    .prezzo-card.interventi .prezzo-card-front { background: #ffedd5; border: 1.5px solid #fb923c; }
+    .prezzo-card.fabbro .prezzo-card-front     { background: #dcfce7; border: 1.5px solid #86efac; }
+    .prezzo-card.minimo .prezzo-card-front     { background: #fee2e2; border: 1.5px solid #fca5a5; }
 
     .prezzo-card.chn .prezzo-card-front::before {
       content: ''; position: absolute; top: 0; left: 0; right: 0;
@@ -590,23 +590,24 @@
     .prezzo-card.minimo      .prezzo-card-back-before { background: #f87171; }
 
     .iva-badge {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 0.62rem;
+      font-size: 0.6rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       border-radius: 4px;
       padding: 2px 7px;
       white-space: nowrap;
+      margin-bottom: 4px;
+      flex-shrink: 0;
     }
     .prezzo-card.base .iva-badge        { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.75); }
     .prezzo-card.chn .iva-badge         { background: #c7d2fe; color: #3730a3; }
     .prezzo-card.interventi .iva-badge  { background: #fde68a; color: #92400e; }
     .prezzo-card.fabbro .iva-badge      { background: #bbf7d0; color: #14532d; }
     .prezzo-card.minimo .iva-badge      { background: #fecaca; color: #991b1b; }
+
+    .prezzo-card-back .prezzo-header { margin-bottom: 6px; }
+    .prezzo-card-back .prezzo-molt   { margin-top: 4px; }
 
     /* hint "tocca" visibile solo prima volta (sparisce dopo primo flip) */
     .flip-hint {
