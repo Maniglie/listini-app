@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Listini Prezzi</title>
 
   <!-- ═══ PWA META ═══════════════════════════════════════════ -->
@@ -62,6 +62,7 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { touch-action: manipulation; }
 
     body {
       font-family: 'DM Sans', sans-serif;
@@ -310,7 +311,6 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      margin-bottom: 18px;
       transition: background var(--transition), color var(--transition), border-color var(--transition);
     }
 
