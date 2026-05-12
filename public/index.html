@@ -396,41 +396,56 @@
 
     /* ─── MOBILE PORTRAIT: search row ─── */
     @media (max-width: 600px) and (orientation: portrait) {
-      .header { padding: 10px 14px; }
+      .header { padding: 10px 14px 0; }
 
       .header-inner {
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 8px;
       }
 
-      /* Logo occupa tutta la prima riga (spinge search-wrap sotto) */
-      .logo { flex: 1 0 100%; }
+      /* Logo prima riga */
+      .logo { flex: 1 0 auto; }
 
-      /* Search-wrap occupa tutta la seconda riga */
+      /* Search-wrap: flex-wrap per mettere barcode in seconda riga */
       .search-wrap {
         flex: 1 0 100%;
-        gap: 10px;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding-bottom: 10px;
       }
 
-      /* Input cresce, bottoni rimangono quadrati comodi */
+      /* Input + btn-search sulla stessa riga */
       #search-input {
-        flex: 1;
+        flex: 1 1 0;
+        min-width: 0;
         font-size: 1rem;
         padding: 13px 14px 13px 44px;
       }
 
       .btn-search {
-        padding: 13px 18px;
+        padding: 13px 20px;
         font-size: 0.95rem;
         flex-shrink: 0;
       }
 
-      /* Bottone barcode: stesso height dell'input, più largo e leggibile */
+      /* Bottone barcode: riga intera, bello grande */
       #btn-scan {
-        min-width: 52px;
-        height: auto;
-        padding: 13px 14px;
-        flex-shrink: 0;
+        order: 10;
+        flex: 1 0 100%;
+        padding: 13px 16px;
+        gap: 10px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--accent);
+        border-color: var(--accent);
+        background: var(--accent-light);
+        border-radius: var(--radius);
+        justify-content: center;
+      }
+
+      #btn-scan::after {
+        content: 'Scansiona barcode';
       }
     }
 
