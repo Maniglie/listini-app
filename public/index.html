@@ -414,12 +414,15 @@
         padding-bottom: 10px;
       }
 
-      /* Input + btn-search sulla stessa riga */
+      /* Nasconde la lente (position:absolute incompatibile col flex-wrap) */
+      .search-icon { display: none; }
+
+      /* Input + btn-search sulla stessa riga, padding normale */
       #search-input {
         flex: 1 1 0;
         min-width: 0;
         font-size: 1rem;
-        padding: 13px 14px 13px 44px;
+        padding: 13px 14px;
       }
 
       .btn-search {
