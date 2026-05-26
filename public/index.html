@@ -731,16 +731,20 @@
       .detail-topbar .btn-add-picking {
         padding: 8px 6px;
         font-size: 0.78rem;
-        gap: 5px;
+        gap: 4px;
       }
-      /* nascondo le label verbose e mostro quelle corte */
-      .btn-back-label { display: none; }
-      .btn-iva-label  { display: none; }
+      .btn-back-label,
+      .btn-iva-label,
       .btn-pick-label { display: none; }
-      /* sostituisco con versioni corte via ::after */
-      .btn-back::after   { content: 'Ricerca'; }
-      .btn-iva-toggle::after  { content: 'IVA'; }
-      .btn-add-picking::after { content: 'Picking'; }
+
+      .btn-back::after        { content: 'Ricerca'; font-size: 0.78rem; }
+      .btn-iva-toggle::after  { content: 'IVA'; font-size: 0.78rem; }
+      .btn-add-picking::after { content: '+ Picking'; font-size: 0.78rem; }
+
+      /* il toggle-dot del bottone IVA va nascosto su mobile per non sprecare spazio */
+      .btn-iva-toggle .toggle-dot { display: none; }
+      /* anche la svg del picking */
+      .btn-add-picking > svg { display: none; }
     }
 
     .btn-iva-toggle {
@@ -1976,8 +1980,8 @@
     if (btn) {
       btn.classList.toggle('active', ivaGlobaleAttiva);
       btn.innerHTML = ivaGlobaleAttiva
-        ? '<span class="toggle-dot"></span> IVA inclusa'
-        : '<span class="toggle-dot"></span> IVA esclusa';
+        ? '<span class="toggle-dot"></span><span class="btn-iva-label"> IVA inclusa</span>'
+        : '<span class="toggle-dot"></span><span class="btn-iva-label"> IVA esclusa</span>';
     }
   }
 
