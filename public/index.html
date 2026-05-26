@@ -709,7 +709,38 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 18px;
-      gap: 10px;
+      gap: 8px;
+    }
+
+    /* tutti e tre i tasti della topbar condividono la stessa altezza e allineamento */
+    .detail-topbar .btn-back,
+    .detail-topbar .btn-iva-toggle,
+    .detail-topbar .btn-add-picking {
+      flex: 1;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    /* mobile portrait: etichette abbreviate o icona-only per non andare a capo */
+    @media (max-width: 540px) {
+      .detail-topbar {
+        gap: 6px;
+      }
+      .detail-topbar .btn-back,
+      .detail-topbar .btn-iva-toggle,
+      .detail-topbar .btn-add-picking {
+        padding: 8px 6px;
+        font-size: 0.78rem;
+        gap: 5px;
+      }
+      /* nascondo le label verbose e mostro quelle corte */
+      .btn-back-label { display: none; }
+      .btn-iva-label  { display: none; }
+      .btn-pick-label { display: none; }
+      /* sostituisco con versioni corte via ::after */
+      .btn-back::after   { content: 'Ricerca'; }
+      .btn-iva-toggle::after  { content: 'IVA'; }
+      .btn-add-picking::after { content: 'Picking'; }
     }
 
     .btn-iva-toggle {
@@ -1638,6 +1669,9 @@
   function showDettaglio(item) {
     currentDetailItem = item;
     const content = document.getElementById('main-content');
+    // Scroll sempre in cima prima di renderizzare la scheda
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    content.scrollTop = 0;
     const p = parseFloat(item.prezzo) || 0;
 
     const prezzi = [
@@ -1683,22 +1717,20 @@
     content.innerHTML = `
       <div class="detail-topbar">
         <button class="btn-back" onclick="document.getElementById('search-input').focus(); document.getElementById('search-input').select()">
-          ${ICONS.arrowL} Nuova ricerca
+          ${ICONS.arrowL} <span class="btn-back-label">Nuova ricerca</span>
         </button>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
-          <button class="btn-add-picking" id="btn-add-picking-detail" onclick="openQtyPopupCurrent()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <path d="M16 10a4 4 0 01-8 0"/>
-            </svg>
-            Aggiungi a picking
-          </button>
-          <button class="btn-iva-toggle" id="btn-iva-toggle" onclick="toggleTutteIva()">
-            <span class="toggle-dot"></span>
-            IVA esclusa
-          </button>
-        </div>
+        <button class="btn-iva-toggle" id="btn-iva-toggle" onclick="toggleTutteIva()">
+          <span class="toggle-dot"></span>
+          <span class="btn-iva-label">IVA esclusa</span>
+        </button>
+        <button class="btn-add-picking" id="btn-add-picking-detail" onclick="openQtyPopupCurrent()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 01-8 0"/>
+          </svg>
+          <span class="btn-pick-label">Aggiungi a picking</span>
+        </button>
       </div>
       <div class="detail-card">
         <div class="article-header">
