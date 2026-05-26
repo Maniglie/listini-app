@@ -733,18 +733,17 @@
         font-size: 0.78rem;
         gap: 4px;
       }
-      .btn-back-label,
-      .btn-iva-label,
-      .btn-pick-label { display: none; }
+      /* "Nuova ricerca" → "Ricerca" */
+      .btn-back-label { display: none; }
+      .btn-back::after { content: 'Ricerca'; font-size: 0.78rem; }
 
-      .btn-back::after        { content: 'Ricerca'; font-size: 0.78rem; }
-      .btn-iva-toggle::after  { content: 'IVA'; font-size: 0.78rem; }
-      .btn-add-picking::after { content: '+ Picking'; font-size: 0.78rem; }
-
-      /* il toggle-dot del bottone IVA va nascosto su mobile per non sprecare spazio */
+      /* IVA: mostra solo il testo inclusa/esclusa, nasconde il dot */
       .btn-iva-toggle .toggle-dot { display: none; }
-      /* anche la svg del picking */
+
+      /* Picking: nasconde testo lungo e svg, mostra "+ Picking" */
+      .btn-pick-label { display: none; }
       .btn-add-picking > svg { display: none; }
+      .btn-add-picking::after { content: '+ Picking'; font-size: 0.78rem; }
     }
 
     .btn-iva-toggle {
@@ -2091,7 +2090,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
-        In lista (${inCart.qty} pz) — modifica`;
+        <span class="btn-pick-label">In lista (${inCart.qty} pz) — modifica</span>`;
     } else {
       btn.classList.remove('added');
       btn.innerHTML = `
@@ -2100,7 +2099,7 @@
           <line x1="3" y1="6" x2="21" y2="6"/>
           <path d="M16 10a4 4 0 01-8 0"/>
         </svg>
-        Aggiungi a picking`;
+        <span class="btn-pick-label">Aggiungi a picking</span>`;
     }
   }
 
