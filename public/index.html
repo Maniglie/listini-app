@@ -2,11 +2,15 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Listini Prezzi</title>
 
   <!-- ═══ PWA META ═══════════════════════════════════════════ -->
   <link rel="manifest" href="manifest.json">
+
+  <!-- Android: associa icona e nome per "Aggiungi a schermata Home" -->
+<link rel="icon" sizes="192x192" href="icons/icon-192x192.png">
+<link rel="icon" sizes="512x512" href="icons/icon-512x512.png">
 
   <!-- Theme color (barra del browser / status bar) -->
   <meta name="theme-color" content="#2563eb">
@@ -42,6 +46,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Barcode Detection API polyfill (ZXing-WASM) — covers iOS Safari, Firefox, etc. -->
   <script src="https://fastly.jsdelivr.net/npm/barcode-detector@3/dist/iife/polyfill.min.js"></script>
+  <!-- jsPDF per generazione picking list -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <style>
     :root {
       --accent: #2563eb;
@@ -62,6 +69,7 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { touch-action: manipulation; }
 
     body {
       font-family: 'DM Sans', sans-serif;
@@ -310,7 +318,6 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      margin-bottom: 18px;
       transition: background var(--transition), color var(--transition), border-color var(--transition);
     }
 
@@ -392,6 +399,64 @@
     @media (max-width: 480px) {
       .prezzi-grid { grid-template-columns: 1fr; }
       .logo span { display: none; }
+    }
+
+    /* ─── MOBILE PORTRAIT: search row ─── */
+    @media (max-width: 600px) and (orientation: portrait) {
+      .header { padding: 10px 14px 0; }
+
+      .header-inner {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      /* Logo prima riga */
+      .logo { flex: 1 0 auto; }
+
+      /* Search-wrap: flex-wrap per mettere barcode in seconda riga */
+      .search-wrap {
+        flex: 1 0 100%;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding-bottom: 10px;
+      }
+
+      /* Nasconde la lente (position:absolute incompatibile col flex-wrap) */
+      .search-icon { display: none; }
+
+      /* Input + btn-search sulla stessa riga, padding normale */
+      #search-input {
+        flex: 1 1 0;
+        min-width: 0;
+        font-size: 1rem;
+        padding: 13px 14px;
+      }
+
+      .btn-search {
+        padding: 13px 20px;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+      }
+
+      /* Bottone barcode: riga intera, bello grande */
+      #btn-scan {
+        order: 10;
+        flex: 1 0 100%;
+        padding: 13px 16px;
+        gap: 10px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--accent);
+        border-color: var(--accent);
+        background: var(--accent-light);
+        border-radius: var(--radius);
+        justify-content: center;
+      }
+
+      #btn-scan::after {
+        content: 'Scansiona barcode';
+      }
     }
 
     .prezzo-card {
@@ -644,7 +709,41 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 18px;
-      gap: 10px;
+      gap: 8px;
+    }
+
+    /* tutti e tre i tasti della topbar condividono la stessa altezza e allineamento */
+    .detail-topbar .btn-back,
+    .detail-topbar .btn-iva-toggle,
+    .detail-topbar .btn-add-picking {
+      flex: 1;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    /* mobile portrait: etichette abbreviate o icona-only per non andare a capo */
+    @media (max-width: 540px) {
+      .detail-topbar {
+        gap: 6px;
+      }
+      .detail-topbar .btn-back,
+      .detail-topbar .btn-iva-toggle,
+      .detail-topbar .btn-add-picking {
+        padding: 8px 6px;
+        font-size: 0.78rem;
+        gap: 4px;
+      }
+      /* "Nuova ricerca" → "Ricerca" */
+      .btn-back-label { display: none; }
+      .btn-back::after { content: 'Ricerca'; font-size: 0.78rem; }
+
+      /* IVA: mostra solo il testo inclusa/esclusa, nasconde il dot */
+      .btn-iva-toggle .toggle-dot { display: none; }
+
+      /* Picking: nasconde testo lungo e svg, mostra "+ Picking" */
+      .btn-pick-label { display: none; }
+      .btn-add-picking > svg { display: none; }
+      .btn-add-picking::after { content: '+ Picking'; font-size: 0.78rem; }
     }
 
     .btn-iva-toggle {
@@ -880,6 +979,410 @@
 
     .scanner-flash.blink { opacity: 0.5; }
 
+    /* ─── CARRELLO BADGE (header) ─── */
+    .btn-cart {
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text-secondary);
+      padding: 10px 13px;
+      display: none; /* hidden until items added */
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+      transition: background var(--transition), color var(--transition), border-color var(--transition), box-shadow var(--transition);
+    }
+    .btn-cart.visible { display: flex; }
+    .btn-cart:hover {
+      background: var(--accent-light);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    .cart-badge {
+      position: absolute;
+      top: -6px; right: -6px;
+      background: #ef4444;
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+      border: 2px solid var(--surface);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    /* ─── PULSANTE AGGIUNGI NELLA SCHEDA DETTAGLIO ─── */
+    .btn-add-picking {
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text-secondary);
+      padding: 8px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      flex-shrink: 0;
+      transition: background var(--transition), color var(--transition), border-color var(--transition), box-shadow var(--transition);
+      white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-add-picking:hover {
+      background: var(--accent-light);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    .btn-add-picking.added {
+      background: #f0fdf4;
+      color: #16a34a;
+      border-color: #86efac;
+    }
+    .btn-add-picking.added:hover {
+      background: #fef2f2;
+      color: #dc2626;
+      border-color: #fca5a5;
+    }
+
+    /* ─── POPUP QUANTITÀ ─── */
+    #qty-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      background: rgba(15,23,42,0.45);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    #qty-overlay.open { display: flex; }
+
+    .qty-popup {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 28px 24px 24px;
+      width: 100%;
+      max-width: 320px;
+      box-shadow: var(--shadow-lg);
+      animation: fadeUp 0.22s ease both;
+      text-align: center;
+    }
+    .qty-popup-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .qty-popup-art {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+    .qty-popup-desc {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+      line-height: 1.35;
+    }
+    .qty-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .qty-btn {
+      cursor: pointer;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      color: var(--text-primary);
+      font-size: 1.4rem;
+      font-weight: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--transition), border-color var(--transition);
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .qty-btn:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+    .qty-btn:active { transform: scale(0.93); }
+    #qty-input {
+      width: 72px;
+      text-align: center;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 4px;
+      background: var(--bg);
+      outline: none;
+      -moz-appearance: textfield;
+    }
+    #qty-input::-webkit-outer-spin-button,
+    #qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    #qty-input:focus { border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .qty-popup-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-qty-cancel {
+      flex: 1;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text-secondary);
+      padding: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background var(--transition);
+    }
+    .btn-qty-cancel:hover { background: var(--bg); }
+    .btn-qty-confirm {
+      flex: 2;
+      cursor: pointer;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--accent);
+      color: white;
+      padding: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+      transition: background var(--transition), box-shadow var(--transition);
+    }
+    .btn-qty-confirm:hover { background: var(--accent-dark); box-shadow: 0 4px 14px rgba(37,99,235,0.35); }
+
+    /* ─── PANNELLO CARRELLO ─── */
+    #cart-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      background: rgba(15,23,42,0.45);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      align-items: flex-end;
+      justify-content: center;
+    }
+    #cart-overlay.open { display: flex; }
+
+    .cart-panel {
+      background: var(--surface);
+      border-radius: 24px 24px 0 0;
+      width: 100%;
+      max-width: 820px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 -8px 40px rgba(15,23,42,0.18);
+      animation: slideUp 0.28s cubic-bezier(0.4,0,0.2,1) both;
+      overflow: hidden;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    .cart-header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .cart-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cart-count-pill {
+      background: var(--accent);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+    .btn-cart-close {
+      cursor: pointer;
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      color: var(--text-secondary);
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--transition);
+    }
+    .btn-cart-close:hover { background: var(--border); }
+
+    .cart-body {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 12px 16px;
+    }
+
+    .cart-empty {
+      text-align: center;
+      padding: 40px 24px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .cart-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 10px 12px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border);
+      animation: fadeUp 0.2s ease both;
+    }
+    .cart-row:last-child { border-bottom: none; }
+
+    .cart-row-info { min-width: 0; }
+    .cart-row-art {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+    .cart-row-desc {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cart-row-price {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    /* qty mini stepper in cart */
+    .cart-qty-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .cart-qty-btn {
+      cursor: pointer;
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      color: var(--text-primary);
+      font-size: 1rem;
+      font-weight: 400;
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--transition);
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+    }
+    .cart-qty-btn:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+    .cart-qty-val {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      min-width: 22px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .btn-cart-remove {
+      cursor: pointer;
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: 1.5px solid #fca5a5;
+      background: #fef2f2;
+      color: #dc2626;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background var(--transition), border-color var(--transition);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-cart-remove:hover { background: #fee2e2; border-color: #ef4444; }
+
+    .cart-footer {
+      padding: 16px 20px max(env(safe-area-inset-bottom, 0px), 20px);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .cart-footer-info {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .btn-generate-pdf {
+      cursor: pointer;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: white;
+      padding: 15px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+      transition: background var(--transition), box-shadow var(--transition), transform var(--transition);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-generate-pdf:hover { background: var(--accent-dark); box-shadow: 0 4px 14px rgba(37,99,235,0.35); transform: translateY(-1px); }
+    .btn-generate-pdf:active { transform: scale(0.98); }
+    .btn-generate-pdf:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* mobile: scan button adjustments when cart visible */
+    @media (max-width: 600px) and (orientation: portrait) {
+      #btn-cart {
+        order: -1;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -918,6 +1421,14 @@
           <line x1="13" y1="8" x2="13" y2="16"/><line x1="16" y1="8" x2="16" y2="11"/>
           <line x1="16" y1="13" x2="16" y2="16"/>
         </svg>
+      </button>
+      <button class="btn-cart" id="btn-cart" onclick="openCart()" title="Lista picking">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+        <span class="cart-badge" id="cart-badge">0</span>
       </button>
     </div>
   </div>
@@ -971,6 +1482,67 @@
     </button>
   </div>
   <div class="scanner-flash" id="scanner-flash"></div>
+</div>
+
+<!-- ─── POPUP QUANTITÀ ─── -->
+<div id="qty-overlay" onclick="handleQtyOverlayClick(event)">
+  <div class="qty-popup" onclick="event.stopPropagation()">
+    <div class="qty-popup-title">Aggiungi alla lista picking</div>
+    <div class="qty-popup-art" id="qty-art"></div>
+    <div class="qty-popup-desc" id="qty-desc"></div>
+    <div class="qty-controls">
+      <button class="qty-btn" onclick="changeQty(-1)" aria-label="Diminuisci">−</button>
+      <input type="number" id="qty-input" value="1" min="1" max="9999"
+             inputmode="numeric" pattern="[0-9]*"
+             onchange="clampQty()" oninput="clampQty()">
+      <button class="qty-btn" onclick="changeQty(+1)" aria-label="Aumenta">+</button>
+    </div>
+    <div class="qty-popup-actions">
+      <button class="btn-qty-cancel" onclick="closeQtyPopup()">Annulla</button>
+      <button class="btn-qty-confirm" onclick="confirmAddToCart()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Aggiungi
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PANNELLO CARRELLO ─── -->
+<div id="cart-overlay" onclick="handleCartOverlayClick(event)">
+  <div class="cart-panel" onclick="event.stopPropagation()">
+    <div class="cart-header">
+      <div class="cart-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+        Lista Picking
+        <span class="cart-count-pill" id="cart-count-pill">0</span>
+      </div>
+      <button class="btn-cart-close" onclick="closeCart()" aria-label="Chiudi">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="cart-body" id="cart-body"></div>
+    <div class="cart-footer">
+      <div class="cart-footer-info" id="cart-footer-info"></div>
+      <button class="btn-generate-pdf" id="btn-generate-pdf" onclick="generatePDF()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        Genera PDF
+      </button>
+    </div>
+  </div>
 </div>
 
 <div class="content" id="main-content">
@@ -1098,7 +1670,11 @@
   // DETTAGLIO ARTICOLO
   // ============================================================
   function showDettaglio(item) {
+    currentDetailItem = item;
     const content = document.getElementById('main-content');
+    // Scroll sempre in cima prima di renderizzare la scheda
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    content.scrollTop = 0;
     const p = parseFloat(item.prezzo) || 0;
 
     const prezzi = [
@@ -1144,11 +1720,19 @@
     content.innerHTML = `
       <div class="detail-topbar">
         <button class="btn-back" onclick="document.getElementById('search-input').focus(); document.getElementById('search-input').select()">
-          ${ICONS.arrowL} Nuova ricerca
+          ${ICONS.arrowL} <span class="btn-back-label">Nuova ricerca</span>
         </button>
         <button class="btn-iva-toggle" id="btn-iva-toggle" onclick="toggleTutteIva()">
           <span class="toggle-dot"></span>
-          IVA esclusa
+          <span class="btn-iva-label">IVA esclusa</span>
+        </button>
+        <button class="btn-add-picking" id="btn-add-picking-detail" onclick="openQtyPopupCurrent()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 01-8 0"/>
+          </svg>
+          <span class="btn-pick-label">Aggiungi a picking</span>
         </button>
       </div>
       <div class="detail-card">
@@ -1168,6 +1752,8 @@
         <div class="prezzi-grid">${prezziHtml}</div>
       </div>
     `;
+    // Aggiorna stato bottone picking (già aggiunto o no)
+    aggiornaBottoneDettaglio(item.art);
   }
 
   // ============================================================
@@ -1393,8 +1979,8 @@
     if (btn) {
       btn.classList.toggle('active', ivaGlobaleAttiva);
       btn.innerHTML = ivaGlobaleAttiva
-        ? '<span class="toggle-dot"></span> IVA inclusa'
-        : '<span class="toggle-dot"></span> IVA esclusa';
+        ? '<span class="toggle-dot"></span><span class="btn-iva-label"> IVA inclusa</span>'
+        : '<span class="toggle-dot"></span><span class="btn-iva-label"> IVA esclusa</span>';
     }
   }
 
@@ -1406,6 +1992,304 @@
       navigator.serviceWorker.register('./sw.js')
         .catch(err => console.warn('SW registration failed:', err));
     });
+  }
+
+  // ============================================================
+  // PICKING LIST — CARRELLO (solo in memoria, nessuna persistenza)
+  // ============================================================
+  let carrello = []; // { art, descrizione, um, fornitore, prezzoBase, qty }
+  let pendingItem = null;    // articolo in attesa di conferma quantità
+  let currentDetailItem = null; // articolo attualmente visualizzato nel dettaglio
+
+  // Helper: apre il popup per l'articolo corrente nel dettaglio
+  function openQtyPopupCurrent() {
+    if (currentDetailItem) openQtyPopup(currentDetailItem);
+  }
+
+  // ── Aggiorna badge nell'header ──────────────────────────────
+  function aggiornaCartBadge() {
+    const totQty = carrello.reduce((s, r) => s + r.qty, 0);
+    const badge  = document.getElementById('cart-badge');
+    const btn    = document.getElementById('btn-cart');
+    if (badge) badge.textContent = totQty;
+    if (btn)  btn.classList.toggle('visible', carrello.length > 0);
+  }
+
+  // ── Apri popup quantità ─────────────────────────────────────
+  function openQtyPopup(item) {
+    pendingItem = item;
+    const inCart = carrello.find(r => r.art === item.art);
+
+    document.getElementById('qty-art').textContent  = item.art || '';
+    document.getElementById('qty-desc').textContent = item.descrizione || '';
+
+    const inp = document.getElementById('qty-input');
+    inp.value = inCart ? inCart.qty : 1;
+
+    document.getElementById('qty-overlay').classList.add('open');
+    // focus con delay per evitare problemi su iOS Safari
+    setTimeout(() => { try { inp.focus(); inp.select(); } catch(e) {} }, 120);
+  }
+
+  function closeQtyPopup() {
+    document.getElementById('qty-overlay').classList.remove('open');
+    pendingItem = null;
+  }
+
+  function handleQtyOverlayClick(e) {
+    if (e.target === document.getElementById('qty-overlay')) closeQtyPopup();
+  }
+
+  function changeQty(delta) {
+    const inp = document.getElementById('qty-input');
+    const v = parseInt(inp.value, 10) || 1;
+    inp.value = Math.max(1, v + delta);
+  }
+
+  function clampQty() {
+    const inp = document.getElementById('qty-input');
+    let v = parseInt(inp.value, 10);
+    if (isNaN(v) || v < 1) v = 1;
+    if (v > 9999) v = 9999;
+    inp.value = v;
+  }
+
+  function confirmAddToCart() {
+    if (!pendingItem) return;
+    clampQty();
+    const qty = parseInt(document.getElementById('qty-input').value, 10) || 1;
+    const art = pendingItem.art;
+
+    const esistente = carrello.find(r => r.art === art);
+    if (esistente) {
+      esistente.qty = qty;
+    } else {
+      carrello.push({
+        art:        pendingItem.art        || '',
+        descrizione:pendingItem.descrizione|| '',
+        um:         pendingItem.um         || '',
+        fornitore:  pendingItem.fornitore  || '',
+        prezzoBase: parseFloat(pendingItem.prezzo) || 0,
+        qty:        qty,
+      });
+    }
+
+    closeQtyPopup();
+    aggiornaCartBadge();
+    aggiornaBottoneDettaglio(pendingItem.art);
+  }
+
+  // ── Aggiorna il bottone nella scheda dettaglio ──────────────
+  function aggiornaBottoneDettaglio(art) {
+    const btn = document.getElementById('btn-add-picking-detail');
+    if (!btn) return;
+    const inCart = carrello.find(r => r.art === art);
+    if (inCart) {
+      btn.classList.add('added');
+      btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span class="btn-pick-label">In lista (${inCart.qty} pz) — modifica</span>`;
+    } else {
+      btn.classList.remove('added');
+      btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+        <span class="btn-pick-label">Aggiungi a picking</span>`;
+    }
+  }
+
+  // ── Pannello carrello ────────────────────────────────────────
+  function openCart() {
+    renderCart();
+    document.getElementById('cart-overlay').classList.add('open');
+  }
+
+  function closeCart() {
+    document.getElementById('cart-overlay').classList.remove('open');
+  }
+
+  function handleCartOverlayClick(e) {
+    if (e.target === document.getElementById('cart-overlay')) closeCart();
+  }
+
+  function renderCart() {
+    const body = document.getElementById('cart-body');
+    const pill = document.getElementById('cart-count-pill');
+    const info = document.getElementById('cart-footer-info');
+    const pdfBtn = document.getElementById('btn-generate-pdf');
+
+    if (pill) pill.textContent = carrello.length;
+
+    if (carrello.length === 0) {
+      body.innerHTML = '<div class="cart-empty">Nessun articolo nella lista</div>';
+      if (info) info.textContent = '';
+      if (pdfBtn) pdfBtn.disabled = true;
+      return;
+    }
+
+    if (pdfBtn) pdfBtn.disabled = false;
+
+    const totRighe = carrello.length;
+    const totPz    = carrello.reduce((s, r) => s + r.qty, 0);
+    if (info) info.textContent = `${totRighe} articol${totRighe === 1 ? 'o' : 'i'} · ${totPz} pz totali`;
+
+    body.innerHTML = carrello.map((r, i) => {
+      const prezzoVendita = (r.prezzoBase * 1.20).toFixed(2).replace('.', ',');
+      return `
+        <div class="cart-row" id="cart-row-${i}">
+          <div class="cart-row-info">
+            <div class="cart-row-art">${esc(r.art)}</div>
+            <div class="cart-row-desc">${esc(r.descrizione)}</div>
+            <div class="cart-row-price">€ ${prezzoVendita} · prezzo vendita (+20%)</div>
+          </div>
+          <div class="cart-qty-wrap">
+            <button class="cart-qty-btn" onclick="cartChangeQty(${i}, -1)" aria-label="Diminuisci">−</button>
+            <span class="cart-qty-val" id="cart-qty-val-${i}">${r.qty}</span>
+            <button class="cart-qty-btn" onclick="cartChangeQty(${i}, +1)" aria-label="Aumenta">+</button>
+          </div>
+          <button class="btn-cart-remove" onclick="cartRemove(${i})" aria-label="Rimuovi">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>`;
+    }).join('');
+  }
+
+  function cartChangeQty(i, delta) {
+    if (!carrello[i]) return;
+    carrello[i].qty = Math.max(1, carrello[i].qty + delta);
+    const el = document.getElementById(`cart-qty-val-${i}`);
+    if (el) el.textContent = carrello[i].qty;
+    // aggiorna footer info
+    const totRighe = carrello.length;
+    const totPz    = carrello.reduce((s, r) => s + r.qty, 0);
+    const info = document.getElementById('cart-footer-info');
+    if (info) info.textContent = `${totRighe} articol${totRighe === 1 ? 'o' : 'i'} · ${totPz} pz totali`;
+    aggiornaCartBadge();
+    // aggiorna bottone nella scheda se visibile
+    aggiornaBottoneDettaglio(carrello[i].art);
+  }
+
+  function cartRemove(i) {
+    if (!carrello[i]) return;
+    const art = carrello[i].art;
+    carrello.splice(i, 1);
+    renderCart();
+    aggiornaCartBadge();
+    aggiornaBottoneDettaglio(art);
+  }
+
+  // ── Tasto ESC chiude i pannelli ─────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (document.getElementById('qty-overlay').classList.contains('open')) {
+        closeQtyPopup();
+      } else if (document.getElementById('cart-overlay').classList.contains('open')) {
+        closeCart();
+      } else if (scannerActive) {
+        closeScanner();
+      }
+    }
+  });
+
+  // ── Generazione PDF ─────────────────────────────────────────
+  function generatePDF() {
+    if (carrello.length === 0) return;
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const oggi = new Date();
+    const dataStr = oggi.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const oraStr  = oggi.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+    // Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(37, 99, 235);
+    doc.text('PICKING LIST', 14, 20);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Generata il ${dataStr} alle ${oraStr}`, 14, 27);
+
+    // Linea separatrice
+    doc.setDrawColor(232, 236, 244);
+    doc.setLineWidth(0.5);
+    doc.line(14, 31, 196, 31);
+
+    // Tabella
+    const head = [['Articolo', 'Descrizione', 'UM', 'PZ', 'Prezzo (+20%)']];
+    const body = carrello.map(r => [
+      r.art,
+      r.descrizione,
+      r.um || '—',
+      String(r.qty),
+      '€ ' + (r.prezzoBase * 1.20).toFixed(2).replace('.', ','),
+    ]);
+
+    doc.autoTable({
+      head: head,
+      body: body,
+      startY: 35,
+      styles: {
+        font: 'helvetica',
+        fontSize: 9,
+        cellPadding: 4,
+        textColor: [15, 23, 42],
+        lineColor: [232, 236, 244],
+        lineWidth: 0.3,
+      },
+      headStyles: {
+        fillColor: [37, 99, 235],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 8.5,
+      },
+      alternateRowStyles: {
+        fillColor: [244, 246, 251],
+      },
+      columnStyles: {
+        0: { cellWidth: 30, font: 'courier', fontSize: 8 },
+        1: { cellWidth: 'auto' },
+        2: { cellWidth: 14, halign: 'center' },
+        3: { cellWidth: 14, halign: 'center', fontStyle: 'bold' },
+        4: { cellWidth: 32, halign: 'right', fontStyle: 'bold' },
+      },
+      margin: { left: 14, right: 14 },
+    });
+
+    // Totali a piè di tabella
+    const finalY = doc.lastAutoTable.finalY + 6;
+    const totPz  = carrello.reduce((s, r) => s + r.qty, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`Totale articoli: ${carrello.length}   |   Totale pezzi: ${totPz}`, 14, finalY);
+
+    // Footer pagina
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text('Listini Prezzi — documento generato automaticamente', 14, 287);
+
+    // Salva e poi svuota il carrello
+    doc.save(`picking-list-${dataStr.replace(/\//g, '-')}.pdf`);
+
+    // Reset carrello
+    carrello = [];
+    aggiornaCartBadge();
+    closeCart();
+    // aggiorna bottone nella scheda se ancora visibile
+    const btnDetail = document.getElementById('btn-add-picking-detail');
+    if (btnDetail) aggiornaBottoneDettaglio('');
   }
 </script>
 </body>
