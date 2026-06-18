@@ -267,13 +267,20 @@
     }
 
     .result-thumb {
-      width: 46px;
-      height: 46px;
-      border-radius: 10px;
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
       object-fit: cover;
       border: 1.5px solid var(--border);
       background: var(--bg);
       flex-shrink: 0;
+      cursor: pointer;
+      transition: transform var(--transition), border-color var(--transition);
+    }
+
+    .result-thumb:hover {
+      transform: scale(1.04);
+      border-color: var(--accent);
     }
 
     .result-main {
@@ -409,6 +416,60 @@
 
     .meta-tag svg { color: var(--text-muted); flex-shrink: 0; }
 
+    .meta-tag-fornitore {
+      background: var(--accent-light);
+      border-color: var(--accent);
+      color: var(--accent-dark);
+      font-weight: 700;
+    }
+
+    .meta-tag-fornitore svg { color: var(--accent); }
+
+    /* ─── LIGHTBOX FOTO ─── */
+    #photo-lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(15,23,42,0.85);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+
+    #photo-lightbox.open { display: flex; }
+
+    #lightbox-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
+      animation: fadeUp 0.2s ease both;
+    }
+
+    .lightbox-close {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--transition);
+    }
+
+    .lightbox-close:hover { background: rgba(255,255,255,0.24); }
+
     .article-update {
       font-size: 0.73rem;
       color: var(--text-muted);
@@ -420,7 +481,8 @@
 
     .article-photos {
       display: flex;
-      gap: 12px;
+      justify-content: center;
+      gap: 14px;
       margin-bottom: 16px;
     }
 
@@ -432,12 +494,19 @@
     }
 
     .article-photo-box img {
-      width: 104px;
-      height: 104px;
+      width: 128px;
+      height: 128px;
       object-fit: cover;
       border-radius: var(--radius-sm);
       border: 1.5px solid var(--border);
       background: var(--bg);
+      cursor: pointer;
+      transition: transform var(--transition), border-color var(--transition);
+    }
+
+    .article-photo-box img:hover {
+      transform: scale(1.03);
+      border-color: var(--accent);
     }
 
     .article-photo-label {
@@ -1600,6 +1669,15 @@
   </div>
 </div>
 
+<div id="photo-lightbox" onclick="handlePhotoLightboxClick(event)">
+  <button class="lightbox-close" onclick="closePhotoLightbox()" aria-label="Chiudi">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+  <img id="lightbox-img" src="" alt="Foto">
+</div>
+
 <div class="content" id="main-content">
   <div class="stato-msg">
     <div class="stato-icon">
@@ -1707,8 +1785,8 @@
       const hasTessera = !!item.foto_tessera;
       const fotoHtml = (hasChiave || hasTessera) ? `
         <div class="result-photos">
-          ${hasChiave  ? `<img class="result-thumb" src="${esc(item.foto_chiave)}"  alt="Chiave"  loading="lazy" onerror="this.style.display='none'">` : ''}
-          ${hasTessera ? `<img class="result-thumb" src="${esc(item.foto_tessera)}" alt="Tessera" loading="lazy" onerror="this.style.display='none'">` : ''}
+          ${hasChiave  ? `<img class="result-thumb" src="${esc(item.foto_chiave)}"  alt="Chiave"  loading="lazy" onclick="openPhotoLightbox('${esc(item.foto_chiave)}', event)"  onerror="this.style.display='none'">` : ''}
+          ${hasTessera ? `<img class="result-thumb" src="${esc(item.foto_tessera)}" alt="Tessera" loading="lazy" onclick="openPhotoLightbox('${esc(item.foto_tessera)}', event)" onerror="this.style.display='none'">` : ''}
         </div>` : '';
 
       return `
@@ -1844,6 +1922,23 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  // ── Lightbox foto (chiave/tessera) ──────────────────────────
+  function openPhotoLightbox(url, ev) {
+    if (ev) ev.stopPropagation();
+    if (!url) return;
+    document.getElementById('lightbox-img').src = url;
+    document.getElementById('photo-lightbox').classList.add('open');
+  }
+
+  function closePhotoLightbox() {
+    document.getElementById('photo-lightbox').classList.remove('open');
+    document.getElementById('lightbox-img').src = '';
+  }
+
+  function handlePhotoLightboxClick(e) {
+    if (e.target.id === 'photo-lightbox') closePhotoLightbox();
   }
 
   // ============================================================
@@ -2260,7 +2355,9 @@
   // ── Tasto ESC chiude i pannelli ─────────────────────────────
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      if (document.getElementById('qty-overlay').classList.contains('open')) {
+      if (document.getElementById('photo-lightbox').classList.contains('open')) {
+        closePhotoLightbox();
+      } else if (document.getElementById('qty-overlay').classList.contains('open')) {
         closeQtyPopup();
       } else if (document.getElementById('cart-overlay').classList.contains('open')) {
         closeCart();
