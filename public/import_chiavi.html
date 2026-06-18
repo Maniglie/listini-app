@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Import Chiavi</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+    :root {
+      --bg: #0f1117;
+      --surface: #181c27;
+      --border: #2a2f3e;
+      --accent: #dc2626;
+      --accent-dim: rgba(220,38,38,0.12);
+      --accent-glow: rgba(220,38,38,0.3);
+      --danger: #ff5c5c;
+      --danger-dim: rgba(255,92,92,0.12);
+      --warn: #fbbf24;
+      --text: #e8eaf0;
+      --muted: #6b7280;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'IBM Plex Sans', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 60px;
+    }
+
+    /* Griglia sfondo */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(220,38,38,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(220,38,38,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 620px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* HEADER */
+    .page-header {
+      margin-bottom: 36px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .page-title {
+      font-family: var(--mono);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .page-title span {
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .back-link {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .back-link:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    /* CARD */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      margin-bottom: 16px;
+    }
+
+    .card-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    /* DROP ZONE */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon {
+      font-size: 2.4rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .drop-text {
+      font-size: 0.95rem;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .drop-sub {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* FILE SELEZIONATO */
+    .file-selected {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-top: 14px;
+    }
+
+    .file-selected.visible { display: flex; }
+
+    .file-icon { font-size: 1.4rem; }
+
+    .file-info { flex: 1; }
+
+    .file-name {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: 600;
+      word-break: break-all;
+    }
+
+    .file-size {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .btn-clear {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 4px;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+
+    .btn-clear:hover { color: var(--danger); }
+
+    /* PREVIEW FORNITORE */
+    .preview-box {
+      display: none;
+      margin-top: 14px;
+    }
+
+    .preview-box.visible { display: block; }
+
+    .preview-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1e2330;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+    }
+
+    .preview-label {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+    }
+
+    .preview-value {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      color: var(--warn);
+      font-weight: 600;
+    }
+
+    .preview-count {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    /* HINT TESTO SOTTO LABEL */
+    .hint-text {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    /* RIEPILOGO FOTO */
+    .photo-summary {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 14px;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--accent);
+    }
+
+    .photo-summary.visible { display: flex; }
+
+    .btn-clear-photos {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      padding: 5px 10px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-clear-photos:hover { color: var(--danger); border-color: var(--danger); }
+
+    .photo-preview {
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .photo-preview.visible { display: flex; }
+
+    .photo-thumb {
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #0a0e14;
+      flex-shrink: 0;
+    }
+
+    .photo-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* BOTTONE IMPORT */
+    .btn-import {
+      width: 100%;
+      background: var(--accent);
+      color: #0a0e14;
+      border: none;
+      border-radius: 10px;
+      padding: 16px;
+      font-family: var(--mono);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 20px;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-import:hover:not(:disabled) {
+      background: #ef4444;
+      box-shadow: 0 0 24px var(--accent-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-import:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* LOG CONSOLE */
+    .log-card { display: none; }
+    .log-card.visible { display: block; }
+
+    .log-console {
+      background: #0a0e14;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      line-height: 1.8;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .log-line { display: flex; gap: 10px; }
+    .log-time { color: var(--muted); white-space: nowrap; }
+    .log-msg.ok    { color: var(--accent); }
+    .log-msg.info  { color: var(--text); }
+    .log-msg.warn  { color: var(--warn); }
+    .log-msg.error { color: var(--danger); }
+
+    /* PROGRESS BAR */
+    .progress-wrap {
+      background: var(--border);
+      border-radius: 4px;
+      height: 4px;
+      margin-top: 16px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-wrap.visible { display: block; }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 8px var(--accent-glow);
+      width: 0%;
+    }
+
+    /* RISULTATO FINALE */
+    .result-banner {
+      display: none;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 16px;
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .result-banner.visible { display: flex; }
+    .result-banner.success { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); }
+    .result-banner.error   { background: var(--danger-dim); border: 1px solid var(--danger); color: var(--danger); }
+
+    .result-icon { font-size: 1.3rem; }
+
+    /* RESPONSIVE */
+    @media (max-width: 480px) {
+      .page-title { font-size: 1.2rem; }
+      .card { padding: 20px; }
+      .drop-zone { padding: 30px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="page-header">
+    <div class="page-title">// import<span>_chiavi</span></div>
+    <a href="chiavi.html" class="back-link">← torna alla ricerca</a>
+  </div>
+
+  <!-- CARD UPLOAD -->
+  <div class="card">
+    <div class="card-label">01 — Seleziona file Excel</div>
+    <p class="hint-text">Stesse colonne del listino standard (ART, DESCRIZIONE, UM, PREZZO, SCONTO1, SCONTO2, CAT MERCE, EAN, FORNITORE, DATA ULTIMO AGGIORNAMENTO) più due colonne extra: <strong style="color:var(--text)">CHIAVE</strong> e <strong style="color:var(--text)">TESSERA</strong>, con il nome esatto del file foto corrispondente (es. <code style="color:var(--accent)">ART123.jpg</code>). Lascia vuota la cella se l'articolo non ha quella foto.</p>
+
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" id="file-input" accept=".xlsx,.xls">
+      <span class="drop-icon">📂</span>
+      <div class="drop-text">Trascina il file Excel qui</div>
+      <div class="drop-sub">oppure clicca per selezionare · .xlsx / .xls</div>
+    </div>
+
+    <div class="file-selected" id="file-selected">
+      <span class="file-icon">📊</span>
+      <div class="file-info">
+        <div class="file-name" id="file-name">—</div>
+        <div class="file-size" id="file-size">—</div>
+      </div>
+      <button class="btn-clear" onclick="clearFile()" title="Rimuovi file">✕</button>
+    </div>
+
+    <div class="preview-box" id="preview-box">
+      <div class="preview-row">
+        <span class="preview-label">Fornitore rilevato</span>
+        <span class="preview-value" id="preview-fornitore">—</span>
+        <span class="preview-count" id="preview-count">—</span>
+      </div>
+      <div class="preview-row" style="margin-top:8px;">
+        <span class="preview-label">Rif. foto nel file</span>
+        <span class="preview-count" id="preview-foto">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD FOTO -->
+  <div class="card">
+    <div class="card-label">02 — Foto chiave e tessera (opzionale)</div>
+    <p class="hint-text">Seleziona o trascina insieme tutte le foto di questo fornitore (sia chiavi che tessere). Verranno raggruppate in una cartella dedicata al fornitore: ad ogni nuovo import le foto precedenti di questo fornitore vengono rimosse e sostituite con quelle caricate qui, esattamente come avviene per i dati del listino.</p>
+
+    <div class="drop-zone" id="photo-drop-zone">
+      <input type="file" id="photo-input" accept="image/*" multiple>
+      <span class="drop-icon">🖼️</span>
+      <div class="drop-text">Trascina qui le foto (chiave e tessera)</div>
+      <div class="drop-sub">oppure clicca per selezionare · più file insieme</div>
+    </div>
+
+    <div class="photo-summary" id="photo-summary">
+      <span id="photo-count"></span>
+      <button class="btn-clear-photos" id="btn-clear-photos" onclick="clearPhotos()" type="button">Svuota foto</button>
+    </div>
+
+    <div class="photo-preview" id="photo-preview"></div>
+  </div>
+
+  <!-- CARD AZIONE -->
+  <div class="card">
+    <div class="card-label">03 — Avvia importazione</div>
+    <p style="font-size:0.85rem; color:var(--muted); line-height:1.6; margin-bottom:4px;">
+      Tutti i record e le foto esistenti del fornitore verranno <strong style="color:var(--danger)">eliminati</strong>
+      e sostituiti con i dati e le foto caricati qui.
+    </p>
+    <button class="btn-import" id="btn-import" disabled onclick="avviaImport()">
+      <span id="btn-label">⚡ Importa chiavi</span>
+    </button>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="result-banner" id="result-banner">
+      <span class="result-icon" id="result-icon"></span>
+      <span id="result-text"></span>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="card log-card" id="log-card">
+    <div class="card-label">04 — Log operazione</div>
+    <div class="log-console" id="log-console"></div>
+  </div>
+
+</div>
+
+<script>
+  // ============================================================
+  // CONFIGURAZIONE — stessi valori di index.html
+  // ============================================================
+  const SUPABASE_URL      = 'https://dltokkmmgiqcearzapzf.supabase.co';  // ← sostituisci
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsdG9ra21tZ2lxY2VhcnphcHpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NzE4MjcsImV4cCI6MjA5MjI0NzgyN30.Aokl-GKXauodlJW7SgUBuYVh8l2tzJGm1rnlSFQ5djE';             // ← sostituisci
+  // Usa la SERVICE ROLE KEY qui sotto per poter scrivere/cancellare
+  const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsdG9ra21tZ2lxY2VhcnphcHpmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjY3MTgyNywiZXhwIjoyMDkyMjQ3ODI3fQ.nH0V7hZSP_OKsCDJC7begBg4VwAe0GplWhVgedryDtA';  // ← sostituisci
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  },
+  db: {
+    schema: 'public'
+  }
+});
+  // ============================================================
+  // STATO
+  // ============================================================
+  let fileData    = null;   // ArrayBuffer del file
+  let prodottiParsati = []; // righe elaborate
+  let fornitoreName = '';
+  let fotoFiles = [];       // File[] delle foto selezionate (chiave + tessera)
+
+  const PHOTOS_BUCKET = 'chiavi-foto';
+
+  function slugify(str) {
+    return String(str)
+      .trim()
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
+
+  // ============================================================
+  // DRAG & DROP + INPUT FILE
+  // ============================================================
+  const dropZone  = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+
+  fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  // ─── Zona foto (chiave + tessera) ───
+  const photoDropZone = document.getElementById('photo-drop-zone');
+  const photoInput    = document.getElementById('photo-input');
+
+  photoDropZone.addEventListener('dragover', e => { e.preventDefault(); photoDropZone.classList.add('drag-over'); });
+  photoDropZone.addEventListener('dragleave', () => photoDropZone.classList.remove('drag-over'));
+  photoDropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    photoDropZone.classList.remove('drag-over');
+    handlePhotos(e.dataTransfer.files);
+  });
+
+  photoInput.addEventListener('change', e => {
+    handlePhotos(e.target.files);
+  });
+
+  function handlePhotos(fileList) {
+    const nuovi = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+    for (const f of nuovi) {
+      // se esiste già un file con lo stesso nome, lo sostituisce
+      fotoFiles = fotoFiles.filter(existing => existing.name.toLowerCase() !== f.name.toLowerCase());
+      fotoFiles.push(f);
+    }
+    renderPhotoPreview();
+  }
+
+  function clearPhotos() {
+    fotoFiles = [];
+    photoInput.value = '';
+    renderPhotoPreview();
+  }
+
+  function renderPhotoPreview() {
+    const summary = document.getElementById('photo-summary');
+    const countEl = document.getElementById('photo-count');
+    const wrap    = document.getElementById('photo-preview');
+
+    if (!fotoFiles.length) {
+      summary.classList.remove('visible');
+      wrap.classList.remove('visible');
+      wrap.innerHTML = '';
+      return;
+    }
+
+    summary.classList.add('visible');
+    countEl.textContent = `${fotoFiles.length} foto selezionate`;
+    wrap.classList.add('visible');
+    wrap.innerHTML = fotoFiles.map(f => `
+      <div class="photo-thumb" title="${f.name}">
+        <img src="${URL.createObjectURL(f)}" alt="${f.name}">
+      </div>
+    `).join('');
+  }
+
+  function handleFile(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['xlsx','xls'].includes(ext)) {
+      showResult('error', '❌', 'Formato non supportato. Usa un file .xlsx o .xls');
+      return;
+    }
+
+    // Mostra info file
+    document.getElementById('file-name').textContent = file.name;
+    document.getElementById('file-size').textContent = formatBytes(file.size);
+    document.getElementById('file-selected').classList.add('visible');
+
+    // Leggi e analizza
+    const reader = new FileReader();
+    reader.onload = e => {
+      fileData = e.target.result;
+      parseExcel(fileData);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function clearFile() {
+    fileData = null;
+    prodottiParsati = [];
+    fornitoreName = '';
+    fileInput.value = '';
+    document.getElementById('file-selected').classList.remove('visible');
+    document.getElementById('preview-box').classList.remove('visible');
+    document.getElementById('preview-foto').textContent = '—';
+    document.getElementById('btn-import').disabled = true;
+    document.getElementById('result-banner').classList.remove('visible');
+    document.getElementById('log-card').classList.remove('visible');
+    document.getElementById('log-console').innerHTML = '';
+  }
+
+  // ============================================================
+  // PARSING EXCEL
+  // ============================================================
+  function parseExcel(buffer) {
+    try {
+      const wb    = XLSX.read(buffer, { type: 'array', cellDates: true });
+      const ws    = wb.Sheets[wb.SheetNames[0]];
+      const righe = XLSX.utils.sheet_to_json(ws, { defval: null });
+
+      if (!righe.length) {
+        showResult('error', '❌', 'Il file sembra vuoto o non ha righe di dati.');
+        return;
+      }
+
+      // Mappa colonne → oggetti DB (CHIAVE/TESSERA sono nomi file temporanei, non colonne DB)
+      prodottiParsati = righe.map(r => ({
+        art:                parseStr(r['ART']),
+        descrizione:        parseStr(r['DESCRIZIONE']),
+        um:                 parseStr(r['UM']),
+        prezzo:             parseNum(r['PREZZO']),
+        sconto1:            parseNum(r['SCONTO1']),
+        sconto2:            parseNum(r['SCONTO2']),
+        categoria:          parseStr(r['CAT MERCE']),
+        ean:                parseStr(r['EAN']),
+        fornitore:          parseStr(r['FORNITORE']),
+        data_aggiornamento: parseData(r['DATA ULTIMO AGGIORNAMENTO']),
+        _chiaveFile:        parseStr(r['CHIAVE']),
+        _tesseraFile:       parseStr(r['TESSERA'])
+      })).filter(p => p.art); // scarta righe senza codice articolo
+
+      // Rileva il fornitore (prima riga non nulla)
+      const primoFornitore = prodottiParsati.find(p => p.fornitore)?.fornitore;
+      if (!primoFornitore) {
+        showResult('error', '❌', 'Colonna FORNITORE non trovata o vuota nel file.');
+        return;
+      }
+
+      fornitoreName = primoFornitore;
+      const conFoto = prodottiParsati.filter(p => p._chiaveFile || p._tesseraFile).length;
+      document.getElementById('preview-fornitore').textContent = fornitoreName;
+      document.getElementById('preview-count').textContent = `${prodottiParsati.length} righe`;
+      document.getElementById('preview-foto').textContent = conFoto ? `${conFoto} righe con riferimento foto` : 'nessun riferimento foto nel file';
+      document.getElementById('preview-box').classList.add('visible');
+      document.getElementById('btn-import').disabled = false;
+
+    } catch(e) {
+      showResult('error', '❌', `Errore lettura file: ${e.message}`);
+    }
+  }
+
+  // ============================================================
+  // IMPORT
+  // ============================================================
+  async function avviaImport() {
+    if (!prodottiParsati.length || !fornitoreName) return;
+
+    // Reset UI
+    document.getElementById('btn-import').disabled = true;
+    document.getElementById('btn-label').textContent = '⏳ Importazione in corso...';
+    document.getElementById('result-banner').classList.remove('visible');
+    document.getElementById('log-card').classList.add('visible');
+    document.getElementById('log-console').innerHTML = '';
+    setProgress(0);
+
+    log('info', `Avvio importazione per: ${fornitoreName}`);
+    log('info', `Righe da importare: ${prodottiParsati.length}`);
+
+    const folderSlug = slugify(fornitoreName);
+
+    try {
+      // STEP 1 — Elimina vecchi record
+      log('warn', `Eliminazione vecchi dati di "${fornitoreName}"...`);
+      const { error: delErr } = await sb
+        .from('chiavi')
+        .delete()
+        .eq('fornitore', fornitoreName);
+
+      if (delErr) throw new Error(`Eliminazione fallita: ${delErr.message}`);
+      log('ok', 'Vecchi dati eliminati ✓');
+      setProgress(10);
+
+      // STEP 2 — Elimina vecchie foto della cartella fornitore
+      log('warn', `Pulizia foto precedenti di "${fornitoreName}"...`);
+      try {
+        const { data: vecchiFile, error: listErr } = await sb.storage.from(PHOTOS_BUCKET).list(folderSlug);
+        if (listErr) throw listErr;
+        if (vecchiFile && vecchiFile.length) {
+          const paths = vecchiFile.map(f => `${folderSlug}/${f.name}`);
+          const { error: rmErr } = await sb.storage.from(PHOTOS_BUCKET).remove(paths);
+          if (rmErr) log('warn', `Pulizia foto non completa: ${rmErr.message}`);
+          else log('ok', `${paths.length} foto precedenti rimosse ✓`);
+        } else {
+          log('info', 'Nessuna foto precedente da rimuovere.');
+        }
+      } catch (e) {
+        log('warn', `Bucket "${PHOTOS_BUCKET}" non trovato o non accessibile (${e.message}). Crealo su Supabase prima di caricare foto.`);
+      }
+      setProgress(20);
+
+      // STEP 3 — Carica le nuove foto selezionate
+      const urlMap = {}; // nome file (minuscolo) → URL pubblico
+      if (fotoFiles.length) {
+        log('info', `Caricamento di ${fotoFiles.length} foto...`);
+        let caricate = 0;
+        for (const file of fotoFiles) {
+          const path = `${folderSlug}/${file.name}`;
+          const { error: upErr } = await sb.storage.from(PHOTOS_BUCKET)
+            .upload(path, file, { upsert: true, contentType: file.type || 'image/jpeg' });
+          if (upErr) {
+            log('error', `Foto "${file.name}" non caricata: ${upErr.message}`);
+            continue;
+          }
+          const { data: pub } = sb.storage.from(PHOTOS_BUCKET).getPublicUrl(path);
+          urlMap[file.name.toLowerCase()] = pub.publicUrl;
+          caricate++;
+          setProgress(20 + Math.round((caricate / fotoFiles.length) * 30));
+        }
+        log('ok', `${caricate} / ${fotoFiles.length} foto caricate ✓`);
+      } else {
+        log('info', 'Nessuna foto selezionata: gli articoli verranno importati senza immagini.');
+      }
+      setProgress(50);
+
+      // STEP 4 — Associa le foto alle righe in base ai nomi file in CHIAVE/TESSERA
+      const righeFinali = prodottiParsati.map(p => {
+        const row = { ...p };
+        const chiaveKey  = p._chiaveFile  ? p._chiaveFile.toLowerCase()  : null;
+        const tesseraKey = p._tesseraFile ? p._tesseraFile.toLowerCase() : null;
+
+        row.foto_chiave  = chiaveKey  && urlMap[chiaveKey]  ? urlMap[chiaveKey]  : null;
+        row.foto_tessera = tesseraKey && urlMap[tesseraKey] ? urlMap[tesseraKey] : null;
+
+        if (chiaveKey  && !urlMap[chiaveKey])  log('warn', `Foto "${p._chiaveFile}" (art. ${p.art}) referenziata ma non trovata tra quelle caricate.`);
+        if (tesseraKey && !urlMap[tesseraKey]) log('warn', `Foto "${p._tesseraFile}" (art. ${p.art}) referenziata ma non trovata tra quelle caricate.`);
+
+        delete row._chiaveFile;
+        delete row._tesseraFile;
+        return row;
+      });
+
+      // STEP 5 — Inserisci in batch da 500
+      const BATCH = 500;
+      const totale = righeFinali.length;
+      let inseriti = 0;
+
+      for (let i = 0; i < totale; i += BATCH) {
+        const batch = righeFinali.slice(i, i + BATCH);
+        const { error: insErr } = await sb.from('chiavi').insert(batch);
+        if (insErr) throw new Error(`Inserimento batch fallito: ${insErr.message}`);
+        inseriti += batch.length;
+        const pct = 50 + Math.round((inseriti / totale) * 50);
+        setProgress(pct);
+        log('info', `Inseriti ${inseriti} / ${totale} record...`);
+      }
+
+      setProgress(100);
+      log('ok', `✅ Importazione completata! ${totale} chiavi caricate.`);
+      showResult('success', '✅', `${totale} chiavi di "${fornitoreName}" importate con successo`);
+
+    } catch(e) {
+      log('error', `ERRORE: ${e.message}`);
+      showResult('error', '❌', e.message);
+    } finally {
+      document.getElementById('btn-label').textContent = '⚡ Importa chiavi';
+      document.getElementById('btn-import').disabled = false;
+    }
+  }
+
+  // ============================================================
+  // HELPERS UI
+  // ============================================================
+  function log(tipo, msg) {
+    const console = document.getElementById('log-console');
+    const now = new Date().toLocaleTimeString('it-IT');
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    line.innerHTML = `<span class="log-time">${now}</span><span class="log-msg ${tipo}">${msg}</span>`;
+    console.appendChild(line);
+    console.scrollTop = console.scrollHeight;
+  }
+
+  function setProgress(pct) {
+    document.getElementById('progress-wrap').classList.add('visible');
+    document.getElementById('progress-bar').style.width = pct + '%';
+  }
+
+  function showResult(tipo, icon, msg) {
+    const banner = document.getElementById('result-banner');
+    banner.className = `result-banner visible ${tipo}`;
+    document.getElementById('result-icon').textContent = icon;
+    document.getElementById('result-text').textContent = msg;
+  }
+
+  // ============================================================
+  // PARSING DATI
+  // ============================================================
+  function parseStr(v) {
+    if (v === null || v === undefined) return null;
+    const s = String(v).trim();
+    return s === '' ? null : s;
+  }
+
+  function parseNum(v) {
+    if (v === null || v === undefined || v === '') return null;
+    const n = parseFloat(String(v).replace(',', '.'));
+    return isNaN(n) ? null : n;
+  }
+
+  function parseData(v) {
+    if (!v) return null;
+    if (v instanceof Date) {
+      return v.toISOString().split('T')[0]; // YYYY-MM-DD
+    }
+    return String(v).trim();
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024*1024)).toFixed(1) + ' MB';
+  }
+</script>
+</body>
+</html>
