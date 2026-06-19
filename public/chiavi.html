@@ -241,7 +241,7 @@
       border: 1.5px solid transparent;
       box-shadow: var(--shadow-sm);
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 14px;
       transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
       animation: fadeUp 0.3s ease both;
@@ -262,6 +262,7 @@
 
     .result-photos {
       display: flex;
+      flex-direction: column;
       gap: 6px;
       flex-shrink: 0;
     }
@@ -269,18 +270,19 @@
     .result-thumb {
       width: 60px;
       height: 60px;
-      border-radius: 12px;
+      border-radius: 10px;
       object-fit: cover;
       border: 1.5px solid var(--border);
       background: var(--bg);
       flex-shrink: 0;
       cursor: pointer;
-      transition: transform var(--transition), border-color var(--transition);
+      transition: opacity var(--transition), transform var(--transition);
+      display: block;
     }
 
     .result-thumb:hover {
+      opacity: 0.82;
       transform: scale(1.04);
-      border-color: var(--accent);
     }
 
     .result-main {
@@ -288,26 +290,24 @@
       min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 4px;
     }
 
     .result-fornitore {
-      font-size: 0.95rem;
+      font-size: 0.88rem;
       font-weight: 700;
       color: var(--accent);
       letter-spacing: -0.01em;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      line-height: 1.3;
     }
 
     .result-desc {
       font-size: 0.85rem;
       font-weight: 500;
       color: var(--text-primary);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      line-height: 1.4;
+      white-space: normal;
+      word-break: break-word;
     }
 
     .result-meta {
@@ -316,6 +316,7 @@
       display: flex;
       align-items: center;
       gap: 4px;
+      margin-top: 2px;
     }
 
     .result-art-tag {
@@ -324,12 +325,13 @@
     }
 
     .result-price {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 700;
       color: var(--text-primary);
       text-align: right;
       flex-shrink: 0;
       font-variant-numeric: tabular-nums;
+      align-self: flex-end;
     }
 
     .result-price .currency {
@@ -505,8 +507,8 @@
     }
 
     .article-photo-box img:hover {
+      opacity: 0.82;
       transform: scale(1.03);
-      border-color: var(--accent);
     }
 
     .article-photo-label {
@@ -1685,7 +1687,8 @@
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
     </div>
-    <p>Cerca per <strong>codice articolo</strong> o <strong>EAN</strong><br>
+    <p>Cerca per <strong>fornitore</strong> o <strong>descrizione</strong><br>
+       Oppure per <strong>codice articolo</strong> o <strong>EAN</strong><br>
        Usa <strong>%testo</strong> per ricerca parziale sul codice</p>
   </div>
 </div>
@@ -1740,7 +1743,7 @@
 
       if (query.startsWith('%')) {
         const term = query.slice(1);
-        dbQuery = dbQuery.ilike('art', `%${term}%`);
+        dbQuery = dbQuery.or(`art.ilike.%${term}%,fornitore.ilike.%${term}%,descrizione.ilike.%${term}%`);
       } else if (/^\d{8,14}$/.test(query)) {
         dbQuery = dbQuery.or(`ean.eq.${query},art.eq.${query}`);
       } else {
@@ -1884,16 +1887,16 @@
         <div class="article-header">
           ${(item.foto_chiave || item.foto_tessera) ? `
           <div class="article-photos">
-            ${item.foto_chiave  ? `<div class="article-photo-box"><img src="${esc(item.foto_chiave)}"  alt="Foto chiave"  loading="lazy" onerror="this.parentElement.style.display='none'"><span class="article-photo-label">Chiave</span></div>`  : ''}
-            ${item.foto_tessera ? `<div class="article-photo-box"><img src="${esc(item.foto_tessera)}" alt="Foto tessera" loading="lazy" onerror="this.parentElement.style.display='none'"><span class="article-photo-label">Tessera</span></div>` : ''}
+            ${item.foto_chiave  ? `<div class="article-photo-box"><img src="${esc(item.foto_chiave)}"  alt="Foto chiave"  loading="lazy" onclick="openPhotoLightbox('${esc(item.foto_chiave)}')"  onerror="this.parentElement.style.display='none'"><span class="article-photo-label">Chiave</span></div>`  : ''}
+            ${item.foto_tessera ? `<div class="article-photo-box"><img src="${esc(item.foto_tessera)}" alt="Foto tessera" loading="lazy" onclick="openPhotoLightbox('${esc(item.foto_tessera)}')" onerror="this.parentElement.style.display='none'"><span class="article-photo-label">Tessera</span></div>` : ''}
           </div>` : ''}
           <div class="article-code">${esc(item.art || '—')}</div>
           <div class="article-desc">${esc(item.descrizione || '—')}</div>
           <div class="article-meta">
-            ${item.um        ? `<span class="meta-tag">${ICONS.package}  ${esc(item.um)}</span>`        : ''}
-            ${item.fornitore ? `<span class="meta-tag">${ICONS.building} ${esc(item.fornitore)}</span>` : ''}
-            ${item.categoria ? `<span class="meta-tag">${ICONS.tag}      ${esc(item.categoria)}</span>` : ''}
-            ${item.ean       ? `<span class="meta-tag">${ICONS.barcode}  ${esc(item.ean)}</span>`       : ''}
+            ${item.um        ? `<span class="meta-tag">${ICONS.package}  ${esc(item.um)}</span>`                                           : ''}
+            ${item.fornitore ? `<span class="meta-tag meta-tag-fornitore">${ICONS.building} ${esc(item.fornitore)}</span>`                  : ''}
+            ${item.categoria ? `<span class="meta-tag">${ICONS.tag}      ${esc(item.categoria)}</span>`                                    : ''}
+            ${item.ean       ? `<span class="meta-tag">${ICONS.barcode}  ${esc(item.ean)}</span>`                                          : ''}
           </div>
           ${item.data_aggiornamento
             ? `<div class="article-update">${ICONS.clock} Aggiornato: ${esc(item.data_aggiornamento)}</div>`
