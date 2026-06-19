@@ -276,13 +276,14 @@
       background: var(--bg);
       flex-shrink: 0;
       cursor: pointer;
-      transition: opacity var(--transition), transform var(--transition);
       display: block;
     }
 
-    .result-thumb:hover {
-      opacity: 0.82;
-      transform: scale(1.04);
+    @media (hover: hover) {
+      .result-thumb:hover {
+        opacity: 0.82;
+        transform: scale(1.04);
+      }
     }
 
     .result-main {
@@ -503,12 +504,13 @@
       border: 1.5px solid var(--border);
       background: var(--bg);
       cursor: pointer;
-      transition: transform var(--transition), border-color var(--transition);
     }
 
-    .article-photo-box img:hover {
-      opacity: 0.82;
-      transform: scale(1.03);
+    @media (hover: hover) {
+      .article-photo-box img:hover {
+        opacity: 0.82;
+        transform: scale(1.03);
+      }
     }
 
     .article-photo-label {
