@@ -1,5 +1,5 @@
 // sw.js — Service Worker Listini Prezzi
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 1;
 const CACHE_NAME = `listini-v${CACHE_VERSION}`;
 
 // Shell files da cachare subito (escluso index.html — sempre network-first)
