@@ -1,9 +1,9 @@
 // sw.js — Service Worker Listini Prezzi
-const CACHE_NAME = 'listini-v1';
+const CACHE_VERSION = 2;
+const CACHE_NAME = `listini-v${CACHE_VERSION}`;
 
-// Shell files da cachare subito (app shell)
+// Shell files da cachare subito (escluso index.html — sempre network-first)
 const PRECACHE = [
-  './index.html',
   './manifest.json',
   './icons/icon-192x192.png',
   './icons/icon-512x512.png',
@@ -32,7 +32,7 @@ self.addEventListener('activate', event => {
   );
 });
 
-// ── Fetch: cache-first per shell, network-first per Supabase ─
+// ── Fetch ────────────────────────────────────────────────────
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
@@ -43,6 +43,19 @@ self.addEventListener('fetch', event => {
         headers: { 'Content-Type': 'application/json' }
       })
     ));
+    return;
+  }
+
+  // index.html → network-first, fallback cache (aggiornamenti immediati)
+  if (url.pathname === '/' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/')) {
+    event.respondWith(
+      fetch(event.request).then(res => {
+        if (res && res.status === 200) {
+          caches.open(CACHE_NAME).then(c => c.put(event.request, res.clone()));
+        }
+        return res;
+      }).catch(() => caches.match('./index.html'))
+    );
     return;
   }
 
