@@ -1514,7 +1514,9 @@
       <input type="text" id="search-input"
              placeholder="Codice, EAN oppure %ricerca libera..."
              onkeydown="if(event.key==='Enter') doSearch()"
-             autofocus autocomplete="off" autocorrect="off" spellcheck="false">
+             oninput="this.value=this.value.toUpperCase()"
+             autofocus autocomplete="off" autocorrect="off" spellcheck="false"
+             autocapitalize="characters" style="text-transform:uppercase">
       <button class="btn-search" onclick="doSearch()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
