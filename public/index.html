@@ -2332,13 +2332,13 @@
     if (info) info.textContent = `${totRighe} articol${totRighe === 1 ? 'o' : 'i'} · ${totPz} pz totali`;
 
     body.innerHTML = carrello.map((r, i) => {
-      const prezzoVendita = (r.prezzoBase * 1.20).toFixed(2).replace('.', ',');
+      const prezzoVendita = r.prezzoBase.toFixed(2).replace('.', ',');
       return `
         <div class="cart-row" id="cart-row-${i}">
           <div class="cart-row-info">
             <div class="cart-row-art">${esc(r.art)}</div>
             <div class="cart-row-desc">${esc(r.descrizione)}</div>
-            <div class="cart-row-price">€ ${prezzoVendita} · prezzo vendita (+20%)</div>
+            <div class="cart-row-price">€ ${prezzoVendita}</div>
           </div>
           <div class="cart-qty-wrap">
             <button class="cart-qty-btn" onclick="cartChangeQty(${i}, -1)" aria-label="Diminuisci">−</button>
@@ -2419,13 +2419,13 @@
     doc.line(14, 31, 196, 31);
 
     // Tabella
-    const head = [['Articolo', 'Descrizione', 'UM', 'PZ', 'Prezzo (+20%)']];
+    const head = [['Articolo', 'Descrizione', 'UM', 'PZ', 'Prezzo']];
     const body = carrello.map(r => [
       r.art,
       r.descrizione,
       r.um || '—',
       String(r.qty),
-      '€ ' + (r.prezzoBase * 1.20).toFixed(2).replace('.', ','),
+      '€ ' + r.prezzoBase.toFixed(2).replace('.', ','),
     ]);
 
     doc.autoTable({
