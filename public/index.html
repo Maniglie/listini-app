@@ -1706,6 +1706,13 @@
     renderHome();
   }
 
+  function nuovaRicerca() {
+    document.getElementById('main-content').innerHTML = '<div id="home-state"></div>';
+    renderHome();
+    const input = document.getElementById('search-input');
+    if (input) { input.focus(); input.select(); }
+  }
+
   function renderHome() {
     const homeState = document.getElementById('home-state');
     if (!homeState) return;
@@ -1912,7 +1919,7 @@
 
     content.innerHTML = `
       <div class="detail-topbar">
-        <button class="btn-back" onclick="document.getElementById('main-content').innerHTML='<div id=\'home-state\'></div>'; renderHome(); document.getElementById('search-input').focus(); document.getElementById('search-input').select()">
+        <button class="btn-back" onclick="nuovaRicerca()">
           ${ICONS.arrowL} <span class="btn-back-label">Nuova ricerca</span>
         </button>
         <button class="btn-iva-toggle" id="btn-iva-toggle" onclick="toggleTutteIva()">
