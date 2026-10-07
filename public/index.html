@@ -1961,8 +1961,8 @@
           <div class="article-code">${esc(item.art || '—')}</div>
           <div class="article-desc">${esc(item.descrizione || '—')}</div>
           <div class="article-meta">
-            ${item.um        ? `<span class="meta-tag">${ICONS.package}  ${esc(item.um)}</span>`        : ''}
             ${item.fornitore ? `<span class="meta-tag meta-fornitore">${ICONS.building} ${esc(item.fornitore)}</span>` : ''}
+            ${item.um        ? `<span class="meta-tag">${ICONS.package}  ${esc(item.um)}</span>`        : ''}
             ${item.categoria ? `<span class="meta-tag">${ICONS.tag}      ${esc(item.categoria)}</span>` : ''}
             ${item.ean       ? `<span class="meta-tag">${ICONS.barcode}  ${esc(item.ean)}</span>`       : ''}
           </div>
