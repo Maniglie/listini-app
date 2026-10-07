@@ -348,9 +348,16 @@
       font-weight: 500;
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       line-height: 1.3;
       word-break: break-all;
+      /* etichetta leggera */
+      display: inline-block;
+      max-width: 100%;
+      background: var(--accent-light);
+      border: 1px solid rgba(37,99,235,0.25);
+      border-radius: 8px;
+      padding: 5px 12px;
     }
 
     .article-desc {
@@ -381,6 +388,15 @@
     }
 
     .meta-tag svg { color: var(--text-muted); flex-shrink: 0; }
+
+    /* Etichetta fornitore evidenziata in blu leggero */
+    .meta-tag.meta-fornitore {
+      background: var(--accent-light);
+      border-color: rgba(37,99,235,0.25);
+      color: var(--accent-dark);
+      font-weight: 500;
+    }
+    .meta-tag.meta-fornitore svg { color: var(--accent); }
 
     .article-update {
       font-size: 0.73rem;
@@ -815,6 +831,11 @@
       color: white;
       border-color: var(--accent);
       box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+    }
+
+    /* Su PC (puntatore preciso + hover) il bottone fotocamera non serve: si usa lo scanner hardware */
+    @media (hover: hover) and (pointer: fine) {
+      #btn-scan { display: none; }
     }
 
     /* ─── SCANNER OVERLAY ─── */
@@ -1941,7 +1962,7 @@
           <div class="article-desc">${esc(item.descrizione || '—')}</div>
           <div class="article-meta">
             ${item.um        ? `<span class="meta-tag">${ICONS.package}  ${esc(item.um)}</span>`        : ''}
-            ${item.fornitore ? `<span class="meta-tag">${ICONS.building} ${esc(item.fornitore)}</span>` : ''}
+            ${item.fornitore ? `<span class="meta-tag meta-fornitore">${ICONS.building} ${esc(item.fornitore)}</span>` : ''}
             ${item.categoria ? `<span class="meta-tag">${ICONS.tag}      ${esc(item.categoria)}</span>` : ''}
             ${item.ean       ? `<span class="meta-tag">${ICONS.barcode}  ${esc(item.ean)}</span>`       : ''}
           </div>
