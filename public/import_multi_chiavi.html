@@ -477,7 +477,7 @@
   <!-- CARD UPLOAD -->
   <div class="card">
     <div class="card-label">01 — Seleziona file Excel</div>
-    <p class="hint-text">Il file può contenere <strong style="color:var(--text)">più fornitori</strong>: ogni riga indica il suo fornitore nella colonna FORNITORE (se è vuoto, la riga viene importata senza fornitore). Colonne del listino standard (ART, DESCRIZIONE, UM, PREZZO, SCONTO1, SCONTO2, CAT MERCE, EAN, FORNITORE, DATA ULTIMO AGGIORNAMENTO) più le colonne foto <strong style="color:var(--text)">FOTO1 … FOTO10</strong> (oppure una sola colonna <strong style="color:var(--text)">FOTO</strong> con più nomi separati da <code style="color:var(--accent)">;</code>), con il nome del file (es. <code style="color:var(--accent)">ART123.jpg</code>; l'estensione può anche mancare). Ogni articolo accetta fino a 10 foto generiche. Le celle vuote restano vuote e non vengono mostrate nella ricerca.</p>
+    <p class="hint-text">Il file può contenere <strong style="color:var(--text)">più fornitori</strong>: ogni riga indica il suo fornitore nella colonna FORNITORE (se è vuoto, la riga viene importata senza fornitore). Colonne del listino standard (ART, DESCRIZIONE, UM, PREZZO, PREZZO ONLINE, SCONTO1, SCONTO2, CAT MERCE, EAN, FORNITORE, DATA ULTIMO AGGIORNAMENTO) più le colonne foto <strong style="color:var(--text)">FOTO1 … FOTO10</strong> (oppure una sola colonna <strong style="color:var(--text)">FOTO</strong> con più nomi separati da <code style="color:var(--accent)">;</code>), con il nome del file (es. <code style="color:var(--accent)">ART123.jpg</code>; l'estensione può anche mancare). Ogni articolo accetta fino a 10 foto generiche. Le celle vuote restano vuote e non vengono mostrate nella ricerca.</p>
 
     <div class="drop-zone" id="drop-zone">
       <input type="file" id="file-input" accept=".xlsx,.xls">
@@ -828,6 +828,7 @@
           descrizione:        parseStr(r['DESCRIZIONE']),
           um:                 parseStr(r['UM']),
           prezzo:             parseNum(r['PREZZO']),
+          prezzo_online:      parseNum(r['PREZZO ONLINE']),
           sconto1:            parseNum(r['SCONTO1']),
           sconto2:            parseNum(r['SCONTO2']),
           categoria:          parseStr(r['CAT MERCE']),
