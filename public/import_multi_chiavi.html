@@ -440,6 +440,23 @@
 
     .preview-warn.visible { display: block; }
 
+    .btn-folder {
+      width: 100%;
+      margin-top: 12px;
+      background: none;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-folder:hover { background: var(--accent-dim); }
+
     /* RESPONSIVE */
     @media (max-width: 480px) {
       .page-title { font-size: 1.2rem; }
@@ -460,7 +477,7 @@
   <!-- CARD UPLOAD -->
   <div class="card">
     <div class="card-label">01 — Seleziona file Excel</div>
-    <p class="hint-text">Il file può contenere <strong style="color:var(--text)">più fornitori</strong>: ogni riga indica il suo fornitore nella colonna FORNITORE. Colonne del listino standard (ART, DESCRIZIONE, UM, PREZZO, SCONTO1, SCONTO2, CAT MERCE, EAN, FORNITORE, DATA ULTIMO AGGIORNAMENTO) più le colonne foto <strong style="color:var(--text)">FOTO1 … FOTO10</strong> (oppure una sola colonna <strong style="color:var(--text)">FOTO</strong> con più nomi separati da <code style="color:var(--accent)">;</code>), con il nome esatto del file (es. <code style="color:var(--accent)">ART123.jpg</code>). Ogni articolo accetta fino a 10 foto generiche. Le celle vuote restano vuote e non vengono mostrate nella ricerca.</p>
+    <p class="hint-text">Il file può contenere <strong style="color:var(--text)">più fornitori</strong>: ogni riga indica il suo fornitore nella colonna FORNITORE (se è vuoto, la riga viene importata senza fornitore). Colonne del listino standard (ART, DESCRIZIONE, UM, PREZZO, SCONTO1, SCONTO2, CAT MERCE, EAN, FORNITORE, DATA ULTIMO AGGIORNAMENTO) più le colonne foto <strong style="color:var(--text)">FOTO1 … FOTO10</strong> (oppure una sola colonna <strong style="color:var(--text)">FOTO</strong> con più nomi separati da <code style="color:var(--accent)">;</code>), con il nome del file (es. <code style="color:var(--accent)">ART123.jpg</code>; l'estensione può anche mancare). Ogni articolo accetta fino a 10 foto generiche. Le celle vuote restano vuote e non vengono mostrate nella ricerca.</p>
 
     <div class="drop-zone" id="drop-zone">
       <input type="file" id="file-input" accept=".xlsx,.xls">
@@ -496,14 +513,17 @@
   <!-- CARD FOTO -->
   <div class="card">
     <div class="card-label">02 — Foto articoli (opzionale)</div>
-    <p class="hint-text">Seleziona o trascina insieme tutte le foto del file, di tutti i fornitori. Ogni foto viene abbinata agli articoli tramite il nome file scritto nelle colonne FOTO (massimo 10 foto per articolo). Le foto vengono raggruppate in una cartella per fornitore: ad ogni nuovo import le foto precedenti di ogni fornitore presente nel file vengono rimosse e sostituite con quelle caricate qui, esattamente come avviene per i dati del listino.</p>
+    <p class="hint-text">Seleziona o trascina insieme tutte le foto del file, di tutti i fornitori. Ogni foto viene abbinata agli articoli tramite il nome file scritto nelle colonne FOTO (massimo 10 foto per articolo). Puoi caricare anche un'intera cartella con tutte le sottocartelle (pulsante qui sotto, oppure trascinandola). Le foto vengono raggruppate in una cartella per fornitore: ad ogni nuovo import le foto precedenti di ogni fornitore presente nel file vengono rimosse e sostituite con quelle caricate qui, esattamente come avviene per i dati del listino.</p>
 
     <div class="drop-zone" id="photo-drop-zone">
       <input type="file" id="photo-input" accept="image/*" multiple>
       <span class="drop-icon">🖼️</span>
       <div class="drop-text">Trascina qui le foto</div>
-      <div class="drop-sub">oppure clicca per selezionare · più file insieme</div>
+      <div class="drop-sub">oppure clicca per selezionare · più file insieme · o trascina una cartella</div>
     </div>
+
+    <button type="button" class="btn-folder" onclick="document.getElementById('folder-input').click()">📁 Seleziona una cartella (con tutte le sottocartelle)</button>
+    <input type="file" id="folder-input" webkitdirectory multiple style="display:none">
 
     <div class="photo-summary" id="photo-summary">
       <span id="photo-count"></span>
@@ -590,7 +610,7 @@
 
   // Cartella foto del fornitore: slug + hash del nome esatto (stabile tra un import e l'altro, mai in conflitto)
   function folderFor(name) {
-    return `${PHOTOS_ROOT}/${slugify(name) || 'fornitore'}-${hashStr(name)}`;
+    return `${PHOTOS_ROOT}/${slugify(name) || (name ? 'fornitore' : 'senza-fornitore')}-${hashStr(name)}`;
   }
 
   // Nome file sicuro per lo storage (niente spazi/accenti/simboli)
@@ -623,10 +643,49 @@
 
   photoDropZone.addEventListener('dragover', e => { e.preventDefault(); photoDropZone.classList.add('drag-over'); });
   photoDropZone.addEventListener('dragleave', () => photoDropZone.classList.remove('drag-over'));
-  photoDropZone.addEventListener('drop', e => {
+  photoDropZone.addEventListener('drop', async e => {
     e.preventDefault();
     photoDropZone.classList.remove('drag-over');
-    handlePhotos(e.dataTransfer.files);
+    const items = e.dataTransfer.items;
+    if (items && items.length && items[0].webkitGetAsEntry) {
+      // le voci vanno lette subito, prima di qualsiasi await
+      const entries = Array.from(items).map(i => i.webkitGetAsEntry()).filter(Boolean);
+      const files = [];
+      for (const en of entries) await walkEntry(en, files);
+      handlePhotos(files);
+    } else {
+      handlePhotos(e.dataTransfer.files);
+    }
+  });
+
+  // Cartelle trascinate: lettura ricorsiva di tutte le sottocartelle
+  function walkEntry(entry, out) {
+    return new Promise(resolve => {
+      if (entry.isFile) {
+        entry.file(f => { out.push(f); resolve(); }, () => resolve());
+      } else if (entry.isDirectory) {
+        const reader = entry.createReader();
+        const all = [];
+        const read = () => reader.readEntries(async ents => {
+          if (!ents.length) {
+            for (const en of all) await walkEntry(en, out);
+            resolve();
+          } else {
+            all.push(...ents);
+            read();
+          }
+        }, () => resolve());
+        read();
+      } else {
+        resolve();
+      }
+    });
+  }
+
+  // Pulsante "Seleziona cartella": include tutte le sottocartelle
+  document.getElementById('folder-input').addEventListener('change', e => {
+    handlePhotos(e.target.files);
+    e.target.value = '';
   });
 
   photoInput.addEventListener('change', e => {
@@ -664,11 +723,14 @@
     summary.classList.add('visible');
     countEl.textContent = `${fotoFiles.length} foto selezionate`;
     wrap.classList.add('visible');
-    wrap.innerHTML = fotoFiles.map(f => `
+    const MAX_THUMBS = 60; // con migliaia di foto mostrare tutte le miniature rallenterebbe la pagina
+    wrap.innerHTML = fotoFiles.slice(0, MAX_THUMBS).map(f => `
       <div class="photo-thumb" title="${f.name.replace(/"/g, '&quot;')}">
         <img src="${URL.createObjectURL(f)}" alt="">
       </div>
-    `).join('');
+    `).join('') + (fotoFiles.length > MAX_THUMBS
+      ? `<div class="photo-thumb" style="display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.72rem;color:var(--muted)">+${fotoFiles.length - MAX_THUMBS}</div>`
+      : '');
   }
 
   function handleFile(file) {
@@ -756,7 +818,7 @@
         const art       = parseStr(r['ART']);
         const fornitore = parseStr(r['FORNITORE']);
         if (!art)       { senzaArt++; continue; }        // scarta righe senza codice articolo
-        if (!fornitore) { senzaFornitore++; continue; }  // senza fornitore non si può sostituire/raggruppare
+        if (!fornitore) senzaFornitore++;                // senza fornitore: ammesso, formano un gruppo a parte
 
         const foto = estraiFoto(r);
         if (foto.length > MAX_FOTO) { fotoTroncate++; foto.length = MAX_FOTO; }
@@ -777,7 +839,7 @@
       }
 
       if (!righeParsate.length) {
-        showResult('error', '❌', 'Nessuna riga valida: servono almeno le colonne ART e FORNITORE compilate.');
+        showResult('error', '❌', 'Nessuna riga valida: serve almeno la colonna ART compilata.');
         document.getElementById('preview-box').classList.remove('visible');
         document.getElementById('btn-import').disabled = true;
         return;
@@ -786,8 +848,9 @@
       // Raggruppa per fornitore
       gruppi = new Map();
       for (const p of righeParsate) {
-        if (!gruppi.has(p.fornitore)) gruppi.set(p.fornitore, []);
-        gruppi.get(p.fornitore).push(p);
+        const gk = p.fornitore || '';   // '' = gruppo "senza fornitore"
+        if (!gruppi.has(gk)) gruppi.set(gk, []);
+        gruppi.get(gk).push(p);
       }
 
       // Anteprima
@@ -800,7 +863,7 @@
       for (const [nome, rows] of gruppi) {
         const line = document.createElement('div');
         line.className = 'forn-line';
-        const a = document.createElement('span'); a.className = 'fn'; a.textContent = nome;
+        const a = document.createElement('span'); a.className = 'fn'; a.textContent = nome || '(senza fornitore)';
         const b = document.createElement('span'); b.className = 'fc'; b.textContent = `${rows.length} righe`;
         line.appendChild(a); line.appendChild(b);
         lista.appendChild(line);
@@ -814,7 +877,7 @@
 
       const avvisi = [];
       if (senzaArt)        avvisi.push(`${senzaArt} righe senza ART scartate`);
-      if (senzaFornitore)  avvisi.push(`${senzaFornitore} righe senza FORNITORE scartate`);
+      if (senzaFornitore)  avvisi.push(`${senzaFornitore} righe senza FORNITORE: verranno importate come gruppo "(senza fornitore)" e sostituiranno le righe senza fornitore già presenti`);
       if (fotoTroncate)    avvisi.push(`${fotoTroncate} articoli con più di ${MAX_FOTO} foto: verranno usate solo le prime ${MAX_FOTO}`);
       const warn = document.getElementById('preview-warn');
       warn.innerHTML = '';
@@ -848,6 +911,8 @@
     return totale;
   }
 
+  const lab = f => f || '(senza fornitore)';
+
   async function avviaImport() {
     if (!righeParsate.length || !gruppi.size) return;
 
@@ -867,9 +932,10 @@
       // STEP 1 — Elimina vecchi record di ogni fornitore presente nel file
       for (let i = 0; i < fornitori.length; i++) {
         const f = fornitori[i];
-        log('warn', `Eliminazione vecchi dati di "${f}"...`);
-        const { error: delErr } = await sb.from(TABLE).delete().eq('fornitore', f);
-        if (delErr) throw new Error(`Eliminazione fallita per "${f}": ${delErr.message}`);
+        log('warn', `Eliminazione vecchi dati di "${lab(f)}"...`);
+        const delQ = sb.from(TABLE).delete();
+        const { error: delErr } = await (f === '' ? delQ.is('fornitore', null) : delQ.eq('fornitore', f));
+        if (delErr) throw new Error(`Eliminazione fallita per "${lab(f)}": ${delErr.message}`);
         setProgress(Math.round(((i + 1) / fornitori.length) * 10));
       }
       log('ok', 'Vecchi dati eliminati ✓');
@@ -892,6 +958,14 @@
 
       // STEP 3 — Carica le foto referenziate, nella cartella di ciascun fornitore che le usa
       const fotoByName = new Map(fotoFiles.map(f => [f.name.toLowerCase(), f]));
+      // abbinamento anche senza estensione (o con estensione diversa): confronto sul nome senza estensione
+      const stemOf = s => s.toLowerCase().replace(/\.[a-z0-9]{2,5}$/, '');
+      const fotoByStem = new Map(fotoFiles.map(f => [stemOf(f.name), f.name.toLowerCase()]));
+      const resolveFoto = n => {
+        const k = n.toLowerCase();
+        if (fotoByName.has(k)) return k;
+        return fotoByStem.get(stemOf(n)) || null;
+      };
       const jobs    = [];            // { f, k, file }
       const mancanti = new Map();    // "fornitore|nome" → { f, name, count }
       const usate   = new Set();     // nomi (minuscolo) referenziati da almeno un articolo
@@ -900,10 +974,10 @@
         const chiavi = new Set();
         for (const r of rows) {
           for (const n of r._foto) {
-            const k = n.toLowerCase();
-            if (fotoByName.has(k)) { chiavi.add(k); usate.add(k); }
+            const k = resolveFoto(n);
+            if (k) { chiavi.add(k); usate.add(k); }
             else {
-              const mk = `${f}|${k}`;
+              const mk = `${f}|${n.toLowerCase()}`;
               const m = mancanti.get(mk) || { f, name: n, count: 0 };
               m.count++;
               mancanti.set(mk, m);
@@ -924,7 +998,7 @@
             const { error: upErr } = await sb.storage.from(PHOTOS_BUCKET)
               .upload(path, job.file, { upsert: true, contentType: job.file.type || 'image/jpeg' });
             if (upErr) {
-              log('error', `Foto "${job.file.name}" (${job.f}) non caricata: ${upErr.message}`);
+              log('error', `Foto "${job.file.name}" (${lab(job.f)}) non caricata: ${upErr.message}`);
             } else {
               const { data: pub } = sb.storage.from(PHOTOS_BUCKET).getPublicUrl(path);
               urlMap.set(`${job.f}|${job.k}`, pub.publicUrl);
@@ -942,9 +1016,13 @@
         log('info', 'Nessuna foto selezionata: gli articoli verranno importati senza immagini.');
       }
 
+      const MAX_AVVISI = 30; // evita un log chilometrico se mancano molte foto
+      let nAvvisi = 0;
       for (const m of mancanti.values()) {
-        log('warn', `Foto "${m.name}" (${m.f}) referenziata da ${m.count} articol${m.count === 1 ? 'o' : 'i'} ma non trovata tra quelle caricate.`);
+        if (nAvvisi++ >= MAX_AVVISI) break;
+        log('warn', `Foto "${m.name}" (${lab(m.f)}) referenziata da ${m.count} articol${m.count === 1 ? 'o' : 'i'} ma non trovata tra quelle caricate.`);
       }
+      if (mancanti.size > MAX_AVVISI) log('warn', `... e altre ${mancanti.size - MAX_AVVISI} foto referenziate ma non trovate (${mancanti.size} in totale).`);
       const nonUsate = fotoFiles.filter(f => !usate.has(f.name.toLowerCase())).length;
       if (nonUsate && usate.size) log('info', `${nonUsate} foto selezionate non sono referenziate nel file e sono state ignorate.`);
       setProgress(50);
@@ -953,7 +1031,7 @@
       const righeFinali = righeParsate.map(p => {
         const { _foto, ...row } = p;
         row.foto = _foto
-          .map(n => urlMap.get(`${p.fornitore}|${n.toLowerCase()}`))
+          .map(n => { const k = resolveFoto(n); return k ? urlMap.get(`${p.fornitore || ''}|${k}`) : undefined; })
           .filter(Boolean)
           .slice(0, MAX_FOTO);
         return row;
