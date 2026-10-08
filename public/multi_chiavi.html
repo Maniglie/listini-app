@@ -1525,13 +1525,65 @@
       }
     }
 
+    /* ─── CARD "PREZZO ONLINE" ─── */
+    .prezzo-card.online { grid-column: 1 / -1; }
+    .prezzo-card.online .prezzo-card-front { background: #f3e8ff; border: 1.5px solid #d8b4fe; }
+    .prezzo-card.online .prezzo-card-front::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; border-radius: var(--radius) var(--radius) 0 0;
+      background: #a855f7;
+    }
+    .prezzo-card.online .prezzo-card-back { background: #e9d5ff; border: 1.5px solid #c084fc; }
+    .prezzo-card.online .prezzo-card-back-before { background: #c084fc; }
+    .prezzo-card.online .prezzo-card-front .prezzo-icon   { background: #f3e8ff; color: #7e22ce; }
+    .prezzo-card.online .prezzo-card-back .prezzo-icon    { background: #e9d5ff; color: #6b21a8; }
+    .prezzo-card.online .prezzo-card-front .prezzo-label  { color: #7e22ce; }
+    .prezzo-card.online .prezzo-card-back .prezzo-label   { color: #6b21a8; }
+    .prezzo-card.online .prezzo-card-front .prezzo-valore { color: #6b21a8; }
+    .prezzo-card.online .prezzo-card-back .prezzo-valore  { color: #581c87; }
+    .prezzo-card.online .iva-badge { background: #e9d5ff; color: #6b21a8; }
+
+    /* ─── CRONOLOGIA HOME ─── */
+    .logo { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .stato-msg.compact { padding: 36px 24px 22px; }
+    .hist-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .hist-head .results-count { margin-bottom: 0; }
+    .btn-hist-clear {
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text-secondary);
+      padding: 6px 11px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background var(--transition), color var(--transition), border-color var(--transition);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-hist-clear:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+
+    /* ─── LETTORE BARCODE NASCOSTO ───
+       Il pulsante e tutto il codice dello scanner restano nella pagina, ma il tasto non si vede.
+       Per riattivarlo basta cancellare la regola qui sotto. */
+    #btn-scan { display: none !important; }
+
   </style>
 </head>
 <body>
 
 <div class="header">
   <div class="header-inner">
-    <div class="logo">
+    <div class="logo" onclick="showHome()" role="button" title="Home">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
       </svg>
@@ -1714,6 +1766,9 @@
 
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  // Schermata iniziale (così com'è nell'HTML), riusata da showHome()
+  const HOME_HTML = document.getElementById('main-content').innerHTML;
+
   // ============================================================
   // ICONE SVG INLINE (riutilizzabili)
   // ============================================================
@@ -1731,6 +1786,7 @@
     wrench:   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
     key:      `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>`,
     shield:   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    globe:    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,
     loader:   `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>`,
     empty:    `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
     error:    `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
@@ -1832,26 +1888,23 @@
     return Array.isArray(f) ? f.filter(hasVal).slice(0, 10) : [];
   }
 
-  function showListaRisultati(items) {
-    lastResults = items;
-    const content = document.getElementById('main-content');
-
-    const rows = items.map((item, idx) => {
-      const foto = getFoto(item);
-      const fotoHtml = foto.length ? `
+  // Riga di risultato (usata sia nei risultati di ricerca sia nella cronologia)
+  function rowHtml(item, onclickJs) {
+    const foto = getFoto(item);
+    const fotoHtml = foto.length ? `
         <div class="result-photos">
           <img class="result-thumb" src="${esc(foto[0])}" alt="Foto" loading="lazy" onclick="openPhotoLightbox(this.src, event)" onerror="this.style.display='none'">
           ${foto.length > 1 ? `<span class="result-more">+${foto.length - 1}</span>` : ''}
         </div>` : '';
 
-      const metaHtml = (hasVal(item.art) || hasVal(item.um)) ? `
+    const metaHtml = (hasVal(item.art) || hasVal(item.um)) ? `
           <div class="result-meta">
             ${hasVal(item.art) ? `<span class="result-art-tag">${esc(item.art)}</span>` : ''}
             ${hasVal(item.um) ? `${hasVal(item.art) ? ICONS.dot + ' ' : ''}${ICONS.package} ${esc(item.um)}` : ''}
           </div>` : '';
 
-      return `
-      <div class="result-item" onclick="showDettaglio(lastResults[${idx}])">
+    return `
+      <div class="result-item" onclick="${onclickJs}">
         ${fotoHtml}
         <div class="result-main">
           ${hasVal(item.fornitore)   ? `<div class="result-fornitore">${esc(item.fornitore)}</div>`   : ''}
@@ -1861,10 +1914,96 @@
         ${hasNum(item.prezzo) ? `<div class="result-price"><span class="currency">€</span>${fmt(item.prezzo)}</div>` : ''}
       </div>
     `;
-    }).join('');
+  }
+
+  function showListaRisultati(items) {
+    lastResults = items;
+    const content = document.getElementById('main-content');
+    const rows = items.map((item, idx) => rowHtml(item, `showDettaglio(lastResults[${idx}])`)).join('');
 
     content.innerHTML = `
       <div class="results-count">${items.length} risultati trovati</div>
+      <div class="results-list">${rows}</div>
+    `;
+  }
+
+  // ============================================================
+  // CRONOLOGIA (ultimi 10 articoli aperti, salvati sul dispositivo)
+  // ============================================================
+  const HIST_KEY = 'multichiavi_cronologia_v1';
+  const HIST_MAX = 10;
+
+  function leggiCronologia() {
+    try {
+      const a = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+      return Array.isArray(a) ? a : [];
+    } catch (e) { return []; }
+  }
+
+  function scriviCronologia(arr) {
+    try { localStorage.setItem(HIST_KEY, JSON.stringify(arr)); } catch (e) { /* storage non disponibile: si ignora */ }
+  }
+
+  function chiaveCronologia(it) {
+    return `${it.art || ''}|${it.fornitore || ''}|${it.descrizione || ''}`;
+  }
+
+  function salvaCronologia(item) {
+    const snap = {
+      id: item.id, art: item.art, descrizione: item.descrizione, um: item.um,
+      prezzo: item.prezzo, prezzo_online: item.prezzo_online, fornitore: item.fornitore,
+      categoria: item.categoria, ean: item.ean, data_aggiornamento: item.data_aggiornamento,
+      foto: getFoto(item)
+    };
+    const k = chiaveCronologia(snap);
+    const arr = leggiCronologia().filter(x => chiaveCronologia(x) !== k);
+    arr.unshift(snap);
+    scriviCronologia(arr.slice(0, HIST_MAX));
+  }
+
+  function pulisciCronologia() {
+    try { localStorage.removeItem(HIST_KEY); } catch (e) {}
+    showHome();
+  }
+
+  // Apre un articolo dalla cronologia: lo mostra subito e poi lo aggiorna con i dati correnti del database
+  async function apriDaCronologia(i) {
+    const snap = leggiCronologia()[i];
+    if (!snap) return;
+    showDettaglio(snap);
+    if (!hasVal(snap.art)) return;
+    try {
+      let q = supabaseClient.from('multi_chiavi').select('*').eq('art', snap.art);
+      q = hasVal(snap.fornitore) ? q.eq('fornitore', snap.fornitore) : q.is('fornitore', null);
+      const { data } = await q.limit(5);
+      if (!data || !data.length) return;
+      const fresh = data.find(d => (d.descrizione || '') === (snap.descrizione || '')) || data[0];
+      if (currentDetailItem === snap) showDettaglio(fresh);
+    } catch (e) { /* offline: resta la copia salvata */ }
+  }
+
+  // Home: schermata iniziale + cronologia
+  function showHome() {
+    const content = document.getElementById('main-content');
+    const input = document.getElementById('search-input');
+    if (input) input.value = '';
+    currentDetailItem = null;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
+    const hist = leggiCronologia();
+    if (!hist.length) {
+      content.innerHTML = HOME_HTML;
+      return;
+    }
+    const rows = hist.map((it, i) => rowHtml(it, `apriDaCronologia(${i})`)).join('');
+    content.innerHTML = HOME_HTML.replace('class="stato-msg"', 'class="stato-msg compact"') + `
+      <div class="hist-head">
+        <div class="results-count">Ultimi articoli cercati</div>
+        <button class="btn-hist-clear" onclick="pulisciCronologia()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          Pulisci
+        </button>
+      </div>
       <div class="results-list">${rows}</div>
     `;
   }
@@ -1874,6 +2013,7 @@
   // ============================================================
   function showDettaglio(item) {
     currentDetailItem = item;
+    salvaCronologia(item);
     const content = document.getElementById('main-content');
     // Scroll sempre in cima prima di renderizzare la scheda
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -1883,17 +2023,24 @@
     const hasPrezzo = hasNum(item.prezzo);
     const p = hasPrezzo ? parseFloat(item.prezzo) : 0;
 
-    const prezzi = [
+    const hasOnline = hasNum(item.prezzo_online);
+    const hasAnyPrice = hasPrezzo || hasOnline;
+
+    const prezzi = hasPrezzo ? [
       { label: 'Prezzo Base',       valore: p,        classe: 'base',       molt: '× 1.00', icon: ICONS.star   },
       { label: 'CHN Ufficiale',     valore: p * 1.05, classe: 'chn',        molt: '× 1.05', icon: ICONS.percent },
       { label: 'Interventi Esterni',valore: p * 1.25, classe: 'interventi', molt: '× 1.25', icon: ICONS.wrench  },
       { label: 'Fabbro',            valore: p * 0.73, classe: 'fabbro',     molt: '× 0.73', icon: ICONS.key     },
       { label: 'Minimo Vendita',    valore: p * 0.68, classe: 'minimo',     molt: '× 0.68', icon: ICONS.shield  },
-    ];
+    ] : [];
+    // Ultima card in fondo: prezzo online (già senza IVA nel file di import)
+    if (hasOnline) {
+      prezzi.push({ label: 'Prezzo Online', valore: parseFloat(item.prezzo_online), classe: 'online', molt: 'scontato', icon: ICONS.globe });
+    }
 
     const IVA = 1.22;
     // Senza prezzo le card prezzo non vengono mostrate affatto
-    const prezziHtml = !hasPrezzo ? '' : prezzi.map(pr => `
+    const prezziHtml = prezzi.map(pr => `
       <div class="prezzo-card ${pr.classe}" onclick="this.classList.toggle('flipped'); this.classList.add('hint-done')">
         <div class="prezzo-card-inner">
 
@@ -1947,14 +2094,14 @@
             ? `<div class="article-update">${ICONS.clock} Aggiornato: ${esc(item.data_aggiornamento)}</div>`
             : ''}`;
 
-    const headerStyle = hasPrezzo ? '' : ' style="border-bottom:none;margin-bottom:0;padding-bottom:0"';
+    const headerStyle = hasAnyPrice ? '' : ' style="border-bottom:none;margin-bottom:0;padding-bottom:0"';
 
     content.innerHTML = `
       <div class="detail-topbar">
         <button class="btn-back" onclick="document.getElementById('search-input').focus(); document.getElementById('search-input').select()">
           ${ICONS.arrowL} <span class="btn-back-label">Nuova ricerca</span>
         </button>
-        ${hasPrezzo ? `
+        ${hasAnyPrice ? `
         <button class="btn-iva-toggle" id="btn-iva-toggle" onclick="toggleTutteIva()">
           <span class="toggle-dot"></span>
           <span class="btn-iva-label">IVA esclusa</span>
@@ -1971,7 +2118,7 @@
       <div class="detail-card">
         ${headerInner.replace(/\s/g, '') ? `<div class="article-header"${headerStyle}>${headerInner}
         </div>` : ''}
-        ${hasPrezzo ? `<div class="prezzi-grid">${prezziHtml}</div>` : ''}
+        ${hasAnyPrice ? `<div class="prezzi-grid">${prezziHtml}</div>` : ''}
       </div>
     `;
     // Aggiorna stato bottone picking (già aggiunto o no)
@@ -2540,6 +2687,9 @@
     const btnDetail = document.getElementById('btn-add-picking-detail');
     if (btnDetail) aggiornaBottoneDettaglio('');
   }
+
+  // Schermata iniziale (con cronologia, se presente)
+  showHome();
 </script>
 </body>
 </html>
