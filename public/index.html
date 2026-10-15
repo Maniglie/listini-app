@@ -358,6 +358,16 @@
       border: 1px solid rgba(37,99,235,0.25);
       border-radius: 8px;
       padding: 5px 12px;
+      /* tap per copiare il codice */
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    }
+    .article-code:active { transform: scale(0.97); }
+    .article-code.copied {
+      background: #dcfce7;
+      color: #166534;
+      border-color: rgba(22,163,74,0.4);
     }
 
     .article-desc {
@@ -1958,7 +1968,7 @@
       </div>
       <div class="detail-card">
         <div class="article-header">
-          <div class="article-code">${esc(item.art || '—')}</div>
+          <div class="article-code" data-code="${esc(item.art || '')}" onclick="copiaCodiceArticolo(this)" title="Tocca per copiare">${esc(item.art || '—')}</div>
           <div class="article-desc">${esc(item.descrizione || '—')}</div>
           <div class="article-meta">
             ${item.fornitore ? `<span class="meta-tag meta-fornitore">${ICONS.building} ${esc(item.fornitore)}</span>` : ''}
@@ -1975,6 +1985,47 @@
     `;
     // Aggiorna stato bottone picking (già aggiunto o no)
     aggiornaBottoneDettaglio(item.art);
+  }
+
+  // ============================================================
+  // COPIA CODICE ARTICOLO
+  // ============================================================
+  function copiaCodiceArticolo(el) {
+    const code = el.dataset.code;
+    if (!code) return;
+
+    const feedback = () => {
+      if (el._copyTimer) return;
+      const orig = el.innerHTML;
+      el.style.minWidth = el.offsetWidth + 'px';   // evita che la cella cambi larghezza
+      el.classList.add('copied');
+      el.textContent = '✓ Copiato';
+      el._copyTimer = setTimeout(() => {
+        el.classList.remove('copied');
+        el.innerHTML = orig;
+        el.style.minWidth = '';
+        el._copyTimer = null;
+      }, 1200);
+    };
+
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = code;
+      ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, code.length);
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      if (ok) feedback();
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(code).then(feedback).catch(fallback);
+    } else {
+      fallback();
+    }
   }
 
   // ============================================================
