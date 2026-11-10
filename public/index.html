@@ -1282,6 +1282,59 @@
     }
     .btn-cart-close:hover { background: var(--border); }
 
+    .cart-header-actions { display: flex; align-items: center; gap: 8px; }
+    .btn-cart-clear {
+      cursor: pointer;
+      border: 1.5px solid #fca5a5;
+      border-radius: var(--radius-sm);
+      background: #fef2f2;
+      color: #dc2626;
+      padding: 7px 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: background var(--transition), border-color var(--transition), opacity var(--transition);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-cart-clear:hover { background: #fee2e2; border-color: #ef4444; }
+    .btn-cart-clear:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ─── CONFERMA SVUOTA LISTA ─── */
+    #confirm-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(15,23,42,0.5);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    #confirm-overlay.open { display: flex; }
+    #confirm-overlay .qty-popup-title { color: #dc2626; }
+    #confirm-overlay .qty-popup-desc { margin-bottom: 22px; font-weight: 500; color: var(--text-secondary); }
+    .btn-qty-danger {
+      flex: 1;
+      cursor: pointer;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: #dc2626;
+      color: white;
+      padding: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(220,38,38,0.25);
+      transition: background var(--transition);
+    }
+    .btn-qty-danger:hover { background: #b91c1c; }
+
     .cart-body {
       flex: 1;
       overflow-y: auto;
@@ -1409,6 +1462,36 @@
     .btn-generate-pdf:active { transform: scale(0.98); }
     .btn-generate-pdf:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
+    /* ─── DUE PAGINE NELLA SCHEDA (Lista / Etichette) ─── */
+    .cart-panel[data-page="lista"] .pg-etichette,
+    .cart-panel[data-page="etichette"] .pg-lista { display: none; }
+
+    .cart-footer-btns { display: flex; gap: 10px; }
+    .cart-footer-btns .btn-generate-pdf { flex: 1 1 auto; min-width: 0; }
+    .btn-footer-secondary {
+      cursor: pointer;
+      flex: 0 0 auto;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text-secondary);
+      padding: 15px 18px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background var(--transition), color var(--transition), border-color var(--transition);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-footer-secondary:hover:not(:disabled) { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .btn-footer-secondary:active:not(:disabled) { transform: scale(0.98); }
+    .btn-footer-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+    /* sulla pagina Etichette le opzioni occupano tutta la scheda, senza il vecchio limite di altezza */
+    .cart-panel[data-page="etichette"] .cart-out { flex: 1 1 auto; max-height: none; border-top: none; padding-top: 14px; }
+
     /* ─── OPZIONI OUTPUT / ETICHETTE ─── */
     .cart-out {
       flex: 0 1 auto;
@@ -1485,6 +1568,39 @@
       transition: background var(--transition), color var(--transition), border-color var(--transition);
     }
     .seg-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* Selettore formato: rettangoli in proporzione reale con le misure dentro */
+    #lbl-format { align-items: flex-end; gap: 10px; }
+    .fmt-btn {
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      padding: 0;
+      font-family: 'DM Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fmt-rect {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--text-secondary);
+      transition: background var(--transition), color var(--transition), border-color var(--transition), box-shadow var(--transition);
+    }
+    .fmt-btn:hover .fmt-rect { border-color: var(--accent); }
+    .fmt-btn:focus-visible .fmt-rect { box-shadow: 0 0 0 3px rgba(37,99,235,0.3); }
+    .fmt-btn.active .fmt-rect {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+    }
+    .fmt-dim  { font-size: 0.8rem; font-weight: 700; line-height: 1.1; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .fmt-unit { font-size: 0.65rem; font-weight: 600; opacity: 0.75; }
     .opt-select {
       width: 100%;
       border: 1.5px solid var(--border);
@@ -1501,6 +1617,29 @@
       font-size: 0.74rem;
       color: #b45309;
       margin-top: 8px;
+    }
+
+    /* ─── ANTEPRIMA ETICHETTA ─── */
+    .lbl-preview {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0 2px;
+    }
+    .lbl-preview svg {
+      display: block;
+      width: 170px;
+      height: auto;
+      background: #fff;
+      border-radius: 2px;
+      box-shadow: var(--shadow-md);
+    }
+    .lbl-preview-cap {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.4;
     }
 
     /* mobile: scan button adjustments when cart visible */
@@ -1748,7 +1887,7 @@
 
 <!-- ─── PANNELLO CARRELLO ─── -->
 <div id="cart-overlay" onclick="handleCartOverlayClick(event)">
-  <div class="cart-panel" onclick="event.stopPropagation()">
+  <div class="cart-panel" data-page="lista" onclick="event.stopPropagation()">
     <div class="cart-header">
       <div class="cart-title">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -1756,26 +1895,27 @@
           <line x1="3" y1="6" x2="21" y2="6"/>
           <path d="M16 10a4 4 0 01-8 0"/>
         </svg>
-        Lista Picking
+        <span class="pg-lista">Lista Picking</span>
+        <span class="pg-etichette">Etichette prezzi</span>
         <span class="cart-count-pill" id="cart-count-pill">0</span>
       </div>
-      <button class="btn-cart-close" onclick="closeCart()" aria-label="Chiudi">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
+      <div class="cart-header-actions">
+        <button class="btn-cart-clear pg-lista" id="btn-cart-clear" onclick="chiediSvuotaCarrello()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+          </svg>
+          Svuota
+        </button>
+        <button class="btn-cart-close" onclick="closeCart()" aria-label="Chiudi">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
     </div>
-    <div class="cart-body" id="cart-body"></div>
-    <div class="cart-out" id="cart-out">
-      <label class="sw-row">
-        <span class="sw-text"><span class="sw-label">Picking list</span><div class="sw-sub">PDF con elenco articoli e quantità</div></span>
-        <span class="sw"><input type="checkbox" id="sw-out-picking" checked onchange="aggiornaOutputUI()"><span class="sw-track"></span></span>
-      </label>
-      <label class="sw-row">
-        <span class="sw-text"><span class="sw-label">Etichette prezzi</span><div class="sw-sub">Fogli A4 da ritagliare per gli espositori</div></span>
-        <span class="sw"><input type="checkbox" id="sw-out-labels" onchange="aggiornaOutputUI()"><span class="sw-track"></span></span>
-      </label>
-      <div class="lbl-opts" id="lbl-opts">
+    <div class="cart-body pg-lista" id="cart-body"></div>
+    <div class="cart-out pg-etichette" id="cart-out">
+      <div class="lbl-opts open" id="lbl-opts">
         <div class="opt-title">Formato etichetta</div>
         <div class="seg" id="lbl-format"></div>
         <div class="opt-title">Informazioni da mostrare</div>
@@ -1792,26 +1932,70 @@
         <span class="sw"><input type="checkbox" id="sw-lbl-barcode" checked onchange="aggiornaOutputUI()"><span class="sw-track"></span></span>
       </label>
         <div class="opt-title">Prezzo</div>
-        <select class="opt-select" id="lbl-listino" aria-label="Listino"></select>
+        <select class="opt-select" id="lbl-listino" aria-label="Listino" onchange="aggiornaOutputUI()"></select>
         <label class="sw-row">
         <span class="sw-text"><span class="sw-label">IVA inclusa</span><div class="sw-sub">Disattiva per mostrare il prezzo IVA esclusa</div></span>
         <span class="sw"><input type="checkbox" id="sw-lbl-iva" checked onchange="aggiornaOutputUI()"><span class="sw-track"></span></span>
       </label>
+        <label class="sw-row">
+        <span class="sw-text"><span class="sw-label">Arrotonda per eccesso</span><div class="sw-sub">Al mezzo euro superiore (es. 10,68 → 11,00 · 10,43 → 10,50)</div></span>
+        <span class="sw"><input type="checkbox" id="sw-lbl-round" onchange="aggiornaOutputUI()"><span class="sw-track"></span></span>
+      </label>
         <div class="opt-hint" id="lbl-hint"></div>
+        <div class="opt-title">Anteprima</div>
+        <div class="lbl-preview" id="lbl-preview"></div>
       </div>
     </div>
-    <div class="cart-footer">
+    <!-- Pagina 1 (Lista): genera solo la picking oppure passa alle etichette -->
+    <div class="cart-footer pg-lista">
       <div class="cart-footer-info" id="cart-footer-info"></div>
-      <button class="btn-generate-pdf" id="btn-generate-pdf" onclick="generatePDF()">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10 9 9 9 8 9"/>
-        </svg>
-        <span id="btn-generate-text">Genera PDF</span>
-      </button>
+      <div class="cart-footer-btns">
+        <button class="btn-generate-pdf" id="btn-generate-pdf" onclick="generaPickingPDF()">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <span class="btn-gen-label">Genera picking</span>
+        </button>
+        <button class="btn-footer-secondary" id="btn-go-etichette" onclick="vaiPaginaCarrello('etichette')">
+          <span>Etichette</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <!-- Pagina 2 (Etichette): torna alla lista oppure genera le etichette -->
+    <div class="cart-footer pg-etichette">
+      <div class="cart-footer-btns">
+        <button class="btn-footer-secondary" onclick="vaiPaginaCarrello('lista')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+          </svg>
+          <span>Lista</span>
+        </button>
+        <button class="btn-generate-pdf" id="btn-generate-labels" onclick="generaEtichettePDF()">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
+          </svg>
+          <span class="btn-gen-label">Genera etichette</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CONFERMA SVUOTA PICKING ─── -->
+<div id="confirm-overlay" onclick="if(event.target===this) chiudiConfermaSvuota()">
+  <div class="qty-popup" onclick="event.stopPropagation()" role="alertdialog" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+    <div class="qty-popup-title" id="confirm-title">Svuota lista picking</div>
+    <div class="qty-popup-desc" id="confirm-text"></div>
+    <div class="qty-popup-actions">
+      <button class="btn-qty-cancel" onclick="chiudiConfermaSvuota()">Annulla</button>
+      <button class="btn-qty-danger" onclick="svuotaCarrello()">Elimina tutto</button>
     </div>
   </div>
 </div>
@@ -2397,7 +2581,35 @@
   // ============================================================
   // PICKING LIST — CARRELLO (solo in memoria, nessuna persistenza)
   // ============================================================
-  let carrello = []; // { art, descrizione, um, fornitore, prezzoBase, qty }
+  // Persistenza locale: la lista resta salvata nel browser finché non viene svuotata
+  const CARRELLO_KEY = 'listini_picking_v1';
+
+  function caricaCarrello() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(CARRELLO_KEY) || '[]');
+      if (!Array.isArray(raw)) return [];
+      return raw
+        .filter(r => r && typeof r.art === 'string' && r.art)
+        .map(r => ({
+          art:         r.art,
+          descrizione: String(r.descrizione || ''),
+          um:          String(r.um || ''),
+          ean:         String(r.ean || ''),
+          fornitore:   String(r.fornitore || ''),
+          prezzoBase:  parseFloat(r.prezzoBase) || 0,
+          qty:         Math.min(9999, Math.max(1, parseInt(r.qty, 10) || 1)),
+        }));
+    } catch (e) { return []; }
+  }
+
+  function salvaCarrello() {
+    try {
+      if (carrello.length === 0) localStorage.removeItem(CARRELLO_KEY);
+      else localStorage.setItem(CARRELLO_KEY, JSON.stringify(carrello));
+    } catch (e) { /* storage pieno o non disponibile: la lista resta comunque in memoria */ }
+  }
+
+  let carrello = caricaCarrello(); // { art, descrizione, um, fornitore, prezzoBase, qty }
   let pendingItem = null;    // articolo in attesa di conferma quantità
   let currentDetailItem = null; // articolo attualmente visualizzato nel dettaglio
 
@@ -2475,9 +2687,10 @@
       });
     }
 
+    salvaCarrello();
     closeQtyPopup();
     aggiornaCartBadge();
-    aggiornaBottoneDettaglio(pendingItem.art);
+    aggiornaBottoneDettaglio(art);
   }
 
   // ── Aggiorna il bottone nella scheda dettaglio ──────────────
@@ -2505,7 +2718,20 @@
   }
 
   // ── Pannello carrello ────────────────────────────────────────
+  // La scheda ha due pagine: 'lista' (articoli) ed 'etichette' (impostazioni + anteprima)
+  let cartPage = 'lista';
+
+  function vaiPaginaCarrello(pagina) {
+    if (pagina === 'etichette' && carrello.length === 0) return;
+    cartPage = pagina;
+    const panel = document.querySelector('.cart-panel');
+    if (panel) panel.dataset.page = pagina;
+    ['cart-body', 'cart-out'].forEach(id => { const el = document.getElementById(id); if (el) el.scrollTop = 0; });
+    if (pagina === 'etichette') aggiornaOutputUI();      // disegna l'anteprima
+  }
+
   function openCart() {
+    vaiPaginaCarrello('lista');
     renderCart();
     document.getElementById('cart-overlay').classList.add('open');
   }
@@ -2525,6 +2751,8 @@
     const pdfBtn = document.getElementById('btn-generate-pdf');
 
     if (pill) pill.textContent = carrello.length;
+    const clrBtn = document.getElementById('btn-cart-clear');
+    if (clrBtn) clrBtn.disabled = carrello.length === 0;
 
     if (carrello.length === 0) {
       body.innerHTML = '<div class="cart-empty">Nessun articolo nella lista</div>';
@@ -2567,6 +2795,7 @@
   function cartChangeQty(i, delta) {
     if (!carrello[i]) return;
     carrello[i].qty = Math.max(1, carrello[i].qty + delta);
+    salvaCarrello();
     const el = document.getElementById(`cart-qty-val-${i}`);
     if (el) el.textContent = carrello[i].qty;
     // aggiorna footer info
@@ -2583,15 +2812,41 @@
     if (!carrello[i]) return;
     const art = carrello[i].art;
     carrello.splice(i, 1);
+    salvaCarrello();
     renderCart();
     aggiornaCartBadge();
     aggiornaBottoneDettaglio(art);
   }
 
+  // ── Svuota tutta la lista (con conferma) ────────────────────
+  function chiediSvuotaCarrello() {
+    if (carrello.length === 0) return;
+    const n  = carrello.length;
+    const pz = carrello.reduce((s, r) => s + r.qty, 0);
+    document.getElementById('confirm-text').textContent =
+      `Verranno eliminati ${n} articol${n === 1 ? 'o' : 'i'} (${pz} pz) dalla lista. L'operazione non si può annullare.`;
+    document.getElementById('confirm-overlay').classList.add('open');
+  }
+
+  function chiudiConfermaSvuota() {
+    document.getElementById('confirm-overlay').classList.remove('open');
+  }
+
+  function svuotaCarrello() {
+    carrello = [];
+    salvaCarrello();
+    chiudiConfermaSvuota();
+    renderCart();
+    aggiornaCartBadge();
+    aggiornaBottoneDettaglio(currentDetailItem ? currentDetailItem.art : '');
+  }
+
   // ── Tasto ESC chiude i pannelli ─────────────────────────────
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      if (document.getElementById('qty-overlay').classList.contains('open')) {
+      if (document.getElementById('confirm-overlay').classList.contains('open')) {
+        chiudiConfermaSvuota();
+      } else if (document.getElementById('qty-overlay').classList.contains('open')) {
         closeQtyPopup();
       } else if (document.getElementById('cart-overlay').classList.contains('open')) {
         closeCart();
@@ -2689,10 +2944,15 @@
   // ============================================================
 
   // Formati disponibili (mm). Per aggiungerne uno basta una riga.
-  // Etichetta tenuta in verticale: w = lato corto, h = lato lungo; il testo corre sul lato corto.
+  // w = larghezza, h = altezza: il testo corre sempre lungo w.
+  //   27×34 → etichetta in verticale, si scrive sul lato corto
+  //   60×40 → etichetta in orizzontale, si scrive sul lato lungo
+  // Testi, barcode e margini si adattano da soli alla dimensione (vedi "k" in disegnaEtichetta).
   const FORMATI_ETICHETTA = [
     { id: '27x34', label: '27 × 34 mm', w: 27, h: 34 },
+    { id: '60x40', label: '60 × 40 mm', w: 60, h: 40 },
   ];
+  const SCALA_FORMATO = 2.5;   // px per mm dei rettangoli nel selettore (proporzioni reali)
   let formatoEtichettaId = FORMATI_ETICHETTA[0].id;
 
   const IVA_ETICHETTE = 1.22;
@@ -2747,9 +3007,13 @@
   function initOpzioniEtichette() {
     const seg = document.getElementById('lbl-format');
     if (seg) {
-      seg.innerHTML = FORMATI_ETICHETTA.map(f =>
-        `<button type="button" class="seg-btn${f.id === formatoEtichettaId ? ' active' : ''}" data-id="${f.id}" onclick="scegliFormatoEtichetta('${f.id}')">${f.label}</button>`
-      ).join('');
+      // un rettangolo per formato, in scala reale, con le misure scritte dentro
+      seg.innerHTML = FORMATI_ETICHETTA.map(f => {
+        const att = f.id === formatoEtichettaId;
+        return `<button type="button" class="fmt-btn${att ? ' active' : ''}" data-id="${f.id}" aria-pressed="${att}" aria-label="Formato ${f.label}" onclick="scegliFormatoEtichetta('${f.id}')">` +
+          `<span class="fmt-rect" style="width:${f.w * SCALA_FORMATO}px;height:${f.h * SCALA_FORMATO}px">` +
+          `<span class="fmt-dim">${f.w} × ${f.h}</span><span class="fmt-unit">mm</span></span></button>`;
+      }).join('');
     }
     const sel = document.getElementById('lbl-listino');
     if (sel) sel.innerHTML = LISTINI_ETICHETTE.map(l => `<option value="${l.id}">${l.label}</option>`).join('');
@@ -2757,24 +3021,34 @@
 
   function scegliFormatoEtichetta(id) {
     formatoEtichettaId = id;
-    document.querySelectorAll('#lbl-format .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+    document.querySelectorAll('#lbl-format .fmt-btn').forEach(b => {
+      const att = b.dataset.id === id;
+      b.classList.toggle('active', att);
+      b.setAttribute('aria-pressed', att);
+    });
+    aggiornaOutputUI();
+  }
+
+  // Legge gli interruttori del pannello (usato sia dal PDF sia dall'anteprima)
+  function opzioniEtichette() {
+    return {
+      nome:        document.getElementById('sw-lbl-name').checked,
+      descrizione: document.getElementById('sw-lbl-desc').checked,
+      barcode:     document.getElementById('sw-lbl-barcode').checked,
+      iva:         document.getElementById('sw-lbl-iva').checked,
+      arrotonda:   document.getElementById('sw-lbl-round').checked,
+      listino:     document.getElementById('lbl-listino').value,
+    };
   }
 
   function aggiornaOutputUI() {
-    const pick = document.getElementById('sw-out-picking');
-    const lbl  = document.getElementById('sw-out-labels');
-    const opts = document.getElementById('lbl-opts');
-    const btn  = document.getElementById('btn-generate-pdf');
-    const txt  = document.getElementById('btn-generate-text');
-    if (!pick || !lbl) return;
-
-    if (opts) opts.classList.toggle('open', lbl.checked);
-
-    if (txt) {
-      txt.textContent = (pick.checked && lbl.checked) ? 'Genera 2 PDF'
-                      : (lbl.checked ? 'Genera etichette PDF' : 'Genera PDF');
-    }
-    if (btn) btn.disabled = carrello.length === 0 || (!pick.checked && !lbl.checked);
+    // senza articoli non si può generare nulla né aprire la pagina etichette
+    const vuoto = carrello.length === 0;
+    ['btn-generate-pdf', 'btn-go-etichette', 'btn-generate-labels'].forEach(id => {
+      const b = document.getElementById(id);
+      if (b) b.disabled = vuoto;
+    });
+    if (vuoto && cartPage === 'etichette') vaiPaginaCarrello('lista');
 
     // avviso articoli senza EAN valido
     const hint = document.getElementById('lbl-hint');
@@ -2786,12 +3060,24 @@
         : '';
       hint.style.display = senza > 0 ? 'block' : 'none';
     }
+
+    aggiornaAnteprimaEtichetta();
+  }
+
+  // Arrotonda per eccesso al mezzo euro (10,68 → 11,00 · 10,43 → 10,50 · 10,50 resta 10,50).
+  // Lavora sui centesimi interi per evitare errori di virgola mobile.
+  function arrotondaEccesso50(v) {
+    const cent = Math.round(v * 100);
+    return (Math.ceil(cent / 50) * 50) / 100;
   }
 
   // ── Disegno di una singola etichetta ────────────────────────
   function disegnaEtichetta(doc, x, y, w, h, r, o) {
     const MM = 0.3528;                    // 1 pt in mm
-    const pad = 1.4;
+    // Fattore di scala rispetto al formato di riferimento 27×34 mm (k = 1 → misure originali):
+    // testi, barcode e margini crescono con l'etichetta, limitati dal lato che "stringe" di più.
+    const k   = Math.min(w / 27, h / 34);
+    const pad = 1.4 * k;
     const iw  = w - 2 * pad;
     const cx  = x + w / 2;
     let top    = y + pad;
@@ -2804,16 +3090,16 @@
       const bc = eanModuli(r.ean);
       if (bc) {
         const n    = bc.bits.length;
-        const modW = Math.min(0.33, (w - 2.0) / n);
+        const modW = Math.min(0.33 * k, (w - 2.0 * k) / n);
         const bw   = modW * n;
         const bx   = cx - bw / 2;
-        const bh   = 7.0;
+        const bh   = 7.0 * k;
 
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(5);
+        doc.setFontSize(5 * k);
         doc.text(bc.testo, cx, bottom, { align: 'center' });
 
-        const barBottom = bottom - 1.9;
+        const barBottom = bottom - 1.9 * k;
         const barTop    = barBottom - bh;
         doc.setFillColor(0, 0, 0);
         let i = 0;
@@ -2825,37 +3111,38 @@
             i = j;
           } else i++;
         }
-        bottom = barTop - 1.2;
+        bottom = barTop - 1.2 * k;
       } else {
-        bottom -= 9.5;                    // mantiene la posizione del prezzo uniforme
+        bottom -= 9.5 * k;                // mantiene la posizione del prezzo uniforme
       }
     }
 
     // 2) Prezzo (con didascalia IVA)
     const l = LISTINI_ETICHETTE.find(x => x.id === o.listino) || LISTINI_ETICHETTE[0];
-    const valore = r.prezzoBase * l.molt * (o.iva ? IVA_ETICHETTE : 1);
+    let valore = r.prezzoBase * l.molt * (o.iva ? IVA_ETICHETTE : 1);
+    if (o.arrotonda) valore = arrotondaEccesso50(valore);
     const testoPrezzo = '€ ' + fmt(valore);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(4.5);
+    doc.setFontSize(4.5 * k);
     doc.setTextColor(100, 116, 139);
     doc.text(o.iva ? 'IVA inclusa' : 'IVA esclusa', cx, bottom, { align: 'center' });
-    bottom -= 2.4;
+    bottom -= 2.4 * k;
 
     doc.setFont('helvetica', 'bold');
-    let fs = 17;
+    let fs = 17 * k;
     doc.setFontSize(fs);
-    while (fs > 8 && doc.getTextWidth(testoPrezzo) > iw) { fs -= 0.5; doc.setFontSize(fs); }
+    while (fs > 8 * k && doc.getTextWidth(testoPrezzo) > iw) { fs -= 0.5; doc.setFontSize(fs); }
     doc.setTextColor(15, 23, 42);
     doc.text(testoPrezzo, cx, bottom, { align: 'center' });
-    bottom -= fs * MM * 0.72 + 1.2;
+    bottom -= fs * MM * 0.72 + 1.2 * k;
 
     // 3) Nome (codice articolo) in alto
     if (o.nome && r.art) {
       doc.setFont('helvetica', 'bold');
-      let s = 8.5;
+      let s = 8.5 * k;
       doc.setFontSize(s);
-      while (s > 5 && doc.getTextWidth(r.art) > iw) { s -= 0.5; doc.setFontSize(s); }
+      while (s > 5 * k && doc.getTextWidth(r.art) > iw) { s -= 0.5; doc.setFontSize(s); }
       let t = r.art;
       if (doc.getTextWidth(t) > iw) {
         while (t.length > 1 && doc.getTextWidth(t + '…') > iw) t = t.slice(0, -1);
@@ -2863,12 +3150,12 @@
       }
       const cap = s * MM * 0.72;
       doc.text(t, cx, top + cap, { align: 'center' });
-      top += cap + 1.3;
+      top += cap + 1.3 * k;
     }
 
     // 4) Descrizione nello spazio rimasto
     if (o.descrizione && r.descrizione) {
-      const fsD = 6, lh = 2.5;
+      const fsD = 6 * k, lh = 2.5 * k;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(fsD);
       doc.setTextColor(51, 65, 85);
@@ -2888,19 +3175,66 @@
     }
   }
 
+  // ── Anteprima live ──────────────────────────────────────────
+  // Riusa disegnaEtichetta(): un piccolo "registratore" con la stessa interfaccia di jsPDF
+  // raccoglie testi e barre e li trasforma in SVG, così l'anteprima coincide con il PDF.
+  function anteprimaEtichettaSvg(r, fmtE, o) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [fmtE.w, fmtE.h] }); // solo per misurare i testi
+    const MMPT = 0.3528;                                  // 1 pt in mm
+    const st = { bold: false, size: 10, color: 'rgb(0,0,0)', fill: 'rgb(0,0,0)' };
+    const n3 = v => (+v).toFixed(3);
+    let body = '';
+
+    const rec = {
+      setTextColor(a, b, c) { doc.setTextColor(a, b, c); st.color = `rgb(${a},${b},${c})`; },
+      setFillColor(a, b, c) { st.fill = `rgb(${a},${b},${c})`; },
+      setFont(f, style)     { doc.setFont(f, style); st.bold = style === 'bold'; },
+      setFontSize(s)        { doc.setFontSize(s); st.size = s; },
+      getTextWidth(t)       { return doc.getTextWidth(t); },
+      splitTextToSize(t, w) { return doc.splitTextToSize(t, w); },
+      rect(x, y, w, h) {
+        body += `<rect x="${n3(x)}" y="${n3(y)}" width="${n3(w)}" height="${n3(h)}" fill="${st.fill}"/>`;
+      },
+      text(t, x, y) {
+        body += `<text x="${n3(x)}" y="${n3(y)}" font-size="${n3(st.size * MMPT)}" fill="${st.color}" text-anchor="middle"` +
+                `${st.bold ? ' font-weight="bold"' : ''}>${esc(t)}</text>`;
+      },
+    };
+    disegnaEtichetta(rec, 0, 0, fmtE.w, fmtE.h, r, o);
+
+    const wpx = Math.min(280, Math.round(fmtE.w * 6.3));   // larghezza a schermo (27 mm → 170 px)
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fmtE.w} ${fmtE.h}" style="width:${wpx}px" role="img" aria-label="Anteprima etichetta">` +
+           `<rect x="0.08" y="0.08" width="${n3(fmtE.w - 0.16)}" height="${n3(fmtE.h - 0.16)}" fill="#fff" stroke="#969696" stroke-width="0.15" stroke-dasharray="1 1"/>` +
+           `<g font-family="Helvetica, Arial, 'Liberation Sans', sans-serif" shape-rendering="geometricPrecision">${body}</g></svg>`;
+  }
+
+  function aggiornaAnteprimaEtichetta() {
+    const box = document.getElementById('lbl-preview');
+    if (!box || cartPage !== 'etichette') return;      // si disegna solo quando la pagina Etichette è aperta
+
+    if (carrello.length === 0) {
+      box.innerHTML = '<div class="lbl-preview-cap">Aggiungi un articolo alla lista per vedere l\'anteprima</div>';
+      return;
+    }
+    try {
+      const r = carrello[0];
+      const fmtE = FORMATI_ETICHETTA.find(f => f.id === formatoEtichettaId) || FORMATI_ETICHETTA[0];
+      box.innerHTML = anteprimaEtichettaSvg(r, fmtE, opzioniEtichette()) +
+        `<div class="lbl-preview-cap">Esempio: ${esc(r.art)} · primo articolo della lista</div>`;
+    } catch (e) {
+      console.warn('Anteprima etichetta non disponibile:', e);
+      box.innerHTML = '';
+    }
+  }
+
   // ── Documento etichette ─────────────────────────────────────
   function creaEtichetteDoc() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
     const fmtE = FORMATI_ETICHETTA.find(f => f.id === formatoEtichettaId) || FORMATI_ETICHETTA[0];
-    const o = {
-      nome:        document.getElementById('sw-lbl-name').checked,
-      descrizione: document.getElementById('sw-lbl-desc').checked,
-      barcode:     document.getElementById('sw-lbl-barcode').checked,
-      iva:         document.getElementById('sw-lbl-iva').checked,
-      listino:     document.getElementById('lbl-listino').value,
-    };
+    const o = opzioniEtichette();
 
     const PAGE_W = 210, PAGE_H = 297, MARG = 5;
     const cols = Math.max(1, Math.floor((PAGE_W - 2 * MARG) / fmtE.w));
@@ -2942,37 +3276,35 @@
     return { doc, nome: `etichette-prezzi-${dataStr}.pdf` };
   }
 
-  // ── Genera i PDF selezionati (picking list e/o etichette) ───
-  function generatePDF() {
+  // ── Generazione PDF: un PDF per tocco ───────────────────────
+  // Ogni pulsante scarica un solo file, direttamente nel gestore del tocco: i browser
+  // (soprattutto da telefono) bloccano i download multipli o ritardati.
+  // La lista NON viene svuotata: si può generare picking ed etichette di seguito e poi usare "Svuota".
+  function generaPDF(creaDoc, btnId) {
     if (carrello.length === 0) return;
-
-    const wantPick = document.getElementById('sw-out-picking').checked;
-    const wantLbl  = document.getElementById('sw-out-labels').checked;
-    if (!wantPick && !wantLbl) return;
-
-    const files = [];
     try {
-      if (wantPick) files.push(creaPickingDoc());
-      if (wantLbl)  files.push(creaEtichetteDoc());
+      const f = creaDoc();
+      f.doc.save(f.nome);
     } catch (err) {
       console.error(err);
       alert('Errore nella generazione del PDF: ' + err.message);
       return;
     }
-
-    // Salva (con piccolo intervallo se sono due file, per non far bloccare il secondo download)
-    files.forEach((f, i) => setTimeout(() => f.doc.save(f.nome), i * 700));
-
-    // Reset carrello
-    carrello = [];
-    aggiornaCartBadge();
-    closeCart();
-    // aggiorna bottone nella scheda se ancora visibile
-    const btnDetail = document.getElementById('btn-add-picking-detail');
-    if (btnDetail) aggiornaBottoneDettaglio('');
+    // conferma visiva sul pulsante premuto
+    const btn = document.getElementById(btnId);
+    const lab = btn && btn.querySelector('.btn-gen-label');
+    if (lab && !btn._fb) {
+      const orig = lab.textContent;
+      lab.textContent = '✓ PDF generato';
+      btn._fb = setTimeout(() => { lab.textContent = orig; btn._fb = null; }, 1600);
+    }
   }
 
+  function generaPickingPDF()   { generaPDF(creaPickingDoc,   'btn-generate-pdf');    }
+  function generaEtichettePDF() { generaPDF(creaEtichetteDoc, 'btn-generate-labels'); }
+
   initOpzioniEtichette();
+  aggiornaCartBadge(); // mostra subito il carrello salvato in locale
 </script>
 </body>
 </html>
