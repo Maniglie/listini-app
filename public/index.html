@@ -1409,6 +1409,100 @@
     .btn-generate-pdf:active { transform: scale(0.98); }
     .btn-generate-pdf:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
+    /* ─── OPZIONI OUTPUT / ETICHETTE ─── */
+    .cart-out {
+      flex: 0 1 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      max-height: 42vh;
+      padding: 8px 20px 6px;
+      border-top: 1px solid var(--border);
+    }
+    .sw-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sw-text { min-width: 0; }
+    .sw-label { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+    .sw-sub   { font-size: 0.74rem; color: var(--text-muted); margin-top: 1px; }
+    .sw input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .sw { position: relative; flex-shrink: 0; display: inline-block; }
+    .sw-track {
+      display: block;
+      width: 44px; height: 26px;
+      border-radius: 13px;
+      background: #cbd5e1;
+      position: relative;
+      transition: background var(--transition);
+    }
+    .sw-track::after {
+      content: '';
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.25);
+      transition: transform var(--transition);
+    }
+    .sw input:checked + .sw-track { background: var(--accent); }
+    .sw input:checked + .sw-track::after { transform: translateX(18px); }
+    .sw input:focus-visible + .sw-track { box-shadow: 0 0 0 3px rgba(37,99,235,0.3); }
+
+    .lbl-opts {
+      display: none;
+      margin: 2px 0 6px;
+      padding: 4px 14px 10px;
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+    .lbl-opts.open { display: block; }
+    .opt-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin: 10px 0 4px;
+    }
+    .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+    .seg-btn {
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text-secondary);
+      padding: 8px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: background var(--transition), color var(--transition), border-color var(--transition);
+    }
+    .seg-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .opt-select {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text-primary);
+      padding: 10px 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .opt-hint {
+      display: none;
+      font-size: 0.74rem;
+      color: #b45309;
+      margin-top: 8px;
+    }
+
     /* mobile: scan button adjustments when cart visible */
     @media (max-width: 600px) and (orientation: portrait) {
       #btn-cart {
@@ -1672,6 +1766,40 @@
       </button>
     </div>
     <div class="cart-body" id="cart-body"></div>
+    <div class="cart-out" id="cart-out">
+      <label class="sw-row">
+        <span class="sw-text"><span class="sw-label">Picking list</span><div class="sw-sub">PDF con elenco articoli e quantità</div></span>
+        <span class="sw"><input type="checkbox" id="sw-out-picking" checked onchange="aggiornaOutputUI()"><span class="sw-track"></span></span>
+      </label>
+      <label class="sw-row">
+        <span class="sw-text"><span class="sw-label">Etichette prezzi</span><div class="sw-sub">Fogli A4 da ritagliare per gli espositori</div></span>
+        <span class="sw"><input type="checkbox" id="sw-out-labels" onchange="aggiornaOutputUI()"><span class="sw-track"></span></span>
+      </label>
+      <div class="lbl-opts" id="lbl-opts">
+        <div class="opt-title">Formato etichetta</div>
+        <div class="seg" id="lbl-format"></div>
+        <div class="opt-title">Informazioni da mostrare</div>
+        <label class="sw-row">
+        <span class="sw-text"><span class="sw-label">Nome</span><div class="sw-sub">Codice articolo</div></span>
+        <span class="sw"><input type="checkbox" id="sw-lbl-name" checked onchange="aggiornaOutputUI()"><span class="sw-track"></span></span>
+      </label>
+        <label class="sw-row">
+        <span class="sw-text"><span class="sw-label">Descrizione</span></span>
+        <span class="sw"><input type="checkbox" id="sw-lbl-desc" checked onchange="aggiornaOutputUI()"><span class="sw-track"></span></span>
+      </label>
+        <label class="sw-row">
+        <span class="sw-text"><span class="sw-label">Codice a barre</span><div class="sw-sub">EAN dell'articolo</div></span>
+        <span class="sw"><input type="checkbox" id="sw-lbl-barcode" checked onchange="aggiornaOutputUI()"><span class="sw-track"></span></span>
+      </label>
+        <div class="opt-title">Prezzo</div>
+        <select class="opt-select" id="lbl-listino" aria-label="Listino"></select>
+        <label class="sw-row">
+        <span class="sw-text"><span class="sw-label">IVA inclusa</span><div class="sw-sub">Disattiva per mostrare il prezzo IVA esclusa</div></span>
+        <span class="sw"><input type="checkbox" id="sw-lbl-iva" checked onchange="aggiornaOutputUI()"><span class="sw-track"></span></span>
+      </label>
+        <div class="opt-hint" id="lbl-hint"></div>
+      </div>
+    </div>
     <div class="cart-footer">
       <div class="cart-footer-info" id="cart-footer-info"></div>
       <button class="btn-generate-pdf" id="btn-generate-pdf" onclick="generatePDF()">
@@ -1682,7 +1810,7 @@
           <line x1="16" y1="17" x2="8" y2="17"/>
           <polyline points="10 9 9 9 8 9"/>
         </svg>
-        Genera PDF
+        <span id="btn-generate-text">Genera PDF</span>
       </button>
     </div>
   </div>
@@ -2340,6 +2468,7 @@
         art:        pendingItem.art        || '',
         descrizione:pendingItem.descrizione|| '',
         um:         pendingItem.um         || '',
+        ean:        pendingItem.ean        || '',
         fornitore:  pendingItem.fornitore  || '',
         prezzoBase: parseFloat(pendingItem.prezzo) || 0,
         qty:        qty,
@@ -2401,6 +2530,7 @@
       body.innerHTML = '<div class="cart-empty">Nessun articolo nella lista</div>';
       if (info) info.textContent = '';
       if (pdfBtn) pdfBtn.disabled = true;
+      aggiornaOutputUI();
       return;
     }
 
@@ -2431,6 +2561,7 @@
           </button>
         </div>`;
     }).join('');
+    aggiornaOutputUI();
   }
 
   function cartChangeQty(i, delta) {
@@ -2471,9 +2602,7 @@
   });
 
   // ── Generazione PDF ─────────────────────────────────────────
-  function generatePDF() {
-    if (carrello.length === 0) return;
-
+  function creaPickingDoc() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
@@ -2552,8 +2681,287 @@
     doc.setTextColor(148, 163, 184);
     doc.text('Listini Prezzi — documento generato automaticamente', 14, 287);
 
-    // Salva e poi svuota il carrello
-    doc.save(`picking-list-${dataStr.replace(/\//g, '-')}.pdf`);
+    return { doc, nome: `picking-list-${dataStr.replace(/\//g, '-')}.pdf` };
+  }
+
+  // ============================================================
+  // ETICHETTE PREZZI — fogli A4 da ritagliare
+  // ============================================================
+
+  // Formati disponibili (mm). Per aggiungerne uno basta una riga.
+  // Etichetta tenuta in verticale: w = lato corto, h = lato lungo; il testo corre sul lato corto.
+  const FORMATI_ETICHETTA = [
+    { id: '27x34', label: '27 × 34 mm', w: 27, h: 34 },
+  ];
+  let formatoEtichettaId = FORMATI_ETICHETTA[0].id;
+
+  const IVA_ETICHETTE = 1.22;
+  const LISTINI_ETICHETTE = [
+    { id: 'base',       label: 'Prezzo Base',        molt: 1.00 },
+    { id: 'chn',        label: 'CHN Ufficiale',      molt: 1.05 },
+    { id: 'interventi', label: 'Interventi Esterni', molt: 1.25 },
+    { id: 'fabbro',     label: 'Fabbro',             molt: 0.73 },
+    { id: 'minimo',     label: 'Minimo Vendita',     molt: 0.68 },
+  ];
+
+  // ── Barcode EAN-13 / EAN-8 / UPC-A (disegnato in vettoriale) ──
+  const EAN_L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011'];
+  const EAN_G = ['0100111','0110011','0011011','0100001','0011101','0111001','0000101','0010001','0001001','0010111'];
+  const EAN_R = ['1110010','1100110','1101100','1000010','1011100','1001110','1010000','1000100','1001000','1110100'];
+  const EAN_PAR = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
+
+  function eanCheckOk(d) {
+    let sum = 0;
+    for (let i = d.length - 2, w = 3; i >= 0; i--, w = 4 - w) sum += parseInt(d[i], 10) * w;
+    return ((10 - (sum % 10)) % 10) === parseInt(d[d.length - 1], 10);
+  }
+
+  // Restituisce { bits, testo } oppure null se il codice non è un EAN valido
+  function eanModuli(codice) {
+    let d = String(codice || '').replace(/\D/g, '');
+    if (d.length === 12) d = '0' + d;                 // UPC-A → EAN-13
+    if (d.length !== 13 && d.length !== 8) return null;
+    if (!eanCheckOk(d)) return null;
+
+    if (d.length === 13) {
+      const par = EAN_PAR[parseInt(d[0], 10)];
+      let bits = '101';
+      for (let i = 0; i < 6; i++) {
+        const n = parseInt(d[i + 1], 10);
+        bits += par[i] === 'L' ? EAN_L[n] : EAN_G[n];
+      }
+      bits += '01010';
+      for (let i = 7; i < 13; i++) bits += EAN_R[parseInt(d[i], 10)];
+      bits += '101';
+      return { bits, testo: d[0] + ' ' + d.slice(1, 7) + ' ' + d.slice(7) };
+    }
+    let bits = '101';
+    for (let i = 0; i < 4; i++) bits += EAN_L[parseInt(d[i], 10)];
+    bits += '01010';
+    for (let i = 4; i < 8; i++) bits += EAN_R[parseInt(d[i], 10)];
+    bits += '101';
+    return { bits, testo: d.slice(0, 4) + ' ' + d.slice(4) };
+  }
+
+  // ── Pannello opzioni (interruttori) ─────────────────────────
+  function initOpzioniEtichette() {
+    const seg = document.getElementById('lbl-format');
+    if (seg) {
+      seg.innerHTML = FORMATI_ETICHETTA.map(f =>
+        `<button type="button" class="seg-btn${f.id === formatoEtichettaId ? ' active' : ''}" data-id="${f.id}" onclick="scegliFormatoEtichetta('${f.id}')">${f.label}</button>`
+      ).join('');
+    }
+    const sel = document.getElementById('lbl-listino');
+    if (sel) sel.innerHTML = LISTINI_ETICHETTE.map(l => `<option value="${l.id}">${l.label}</option>`).join('');
+  }
+
+  function scegliFormatoEtichetta(id) {
+    formatoEtichettaId = id;
+    document.querySelectorAll('#lbl-format .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+  }
+
+  function aggiornaOutputUI() {
+    const pick = document.getElementById('sw-out-picking');
+    const lbl  = document.getElementById('sw-out-labels');
+    const opts = document.getElementById('lbl-opts');
+    const btn  = document.getElementById('btn-generate-pdf');
+    const txt  = document.getElementById('btn-generate-text');
+    if (!pick || !lbl) return;
+
+    if (opts) opts.classList.toggle('open', lbl.checked);
+
+    if (txt) {
+      txt.textContent = (pick.checked && lbl.checked) ? 'Genera 2 PDF'
+                      : (lbl.checked ? 'Genera etichette PDF' : 'Genera PDF');
+    }
+    if (btn) btn.disabled = carrello.length === 0 || (!pick.checked && !lbl.checked);
+
+    // avviso articoli senza EAN valido
+    const hint = document.getElementById('lbl-hint');
+    const bc = document.getElementById('sw-lbl-barcode');
+    if (hint) {
+      const senza = (bc && bc.checked) ? carrello.filter(r => !eanModuli(r.ean)).length : 0;
+      hint.textContent = senza > 0
+        ? `${senza} articol${senza === 1 ? 'o' : 'i'} senza EAN valido: l'etichetta uscirà senza codice a barre.`
+        : '';
+      hint.style.display = senza > 0 ? 'block' : 'none';
+    }
+  }
+
+  // ── Disegno di una singola etichetta ────────────────────────
+  function disegnaEtichetta(doc, x, y, w, h, r, o) {
+    const MM = 0.3528;                    // 1 pt in mm
+    const pad = 1.4;
+    const iw  = w - 2 * pad;
+    const cx  = x + w / 2;
+    let top    = y + pad;
+    let bottom = y + h - pad;
+
+    doc.setTextColor(15, 23, 42);
+
+    // 1) Codice a barre in fondo
+    if (o.barcode) {
+      const bc = eanModuli(r.ean);
+      if (bc) {
+        const n    = bc.bits.length;
+        const modW = Math.min(0.33, (w - 2.0) / n);
+        const bw   = modW * n;
+        const bx   = cx - bw / 2;
+        const bh   = 7.0;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(5);
+        doc.text(bc.testo, cx, bottom, { align: 'center' });
+
+        const barBottom = bottom - 1.9;
+        const barTop    = barBottom - bh;
+        doc.setFillColor(0, 0, 0);
+        let i = 0;
+        while (i < n) {
+          if (bc.bits[i] === '1') {
+            let j = i;
+            while (j < n && bc.bits[j] === '1') j++;
+            doc.rect(bx + i * modW, barTop, (j - i) * modW, bh, 'F');
+            i = j;
+          } else i++;
+        }
+        bottom = barTop - 1.2;
+      } else {
+        bottom -= 9.5;                    // mantiene la posizione del prezzo uniforme
+      }
+    }
+
+    // 2) Prezzo (con didascalia IVA)
+    const l = LISTINI_ETICHETTE.find(x => x.id === o.listino) || LISTINI_ETICHETTE[0];
+    const valore = r.prezzoBase * l.molt * (o.iva ? IVA_ETICHETTE : 1);
+    const testoPrezzo = '€ ' + fmt(valore);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(4.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(o.iva ? 'IVA inclusa' : 'IVA esclusa', cx, bottom, { align: 'center' });
+    bottom -= 2.4;
+
+    doc.setFont('helvetica', 'bold');
+    let fs = 17;
+    doc.setFontSize(fs);
+    while (fs > 8 && doc.getTextWidth(testoPrezzo) > iw) { fs -= 0.5; doc.setFontSize(fs); }
+    doc.setTextColor(15, 23, 42);
+    doc.text(testoPrezzo, cx, bottom, { align: 'center' });
+    bottom -= fs * MM * 0.72 + 1.2;
+
+    // 3) Nome (codice articolo) in alto
+    if (o.nome && r.art) {
+      doc.setFont('helvetica', 'bold');
+      let s = 8.5;
+      doc.setFontSize(s);
+      while (s > 5 && doc.getTextWidth(r.art) > iw) { s -= 0.5; doc.setFontSize(s); }
+      let t = r.art;
+      if (doc.getTextWidth(t) > iw) {
+        while (t.length > 1 && doc.getTextWidth(t + '…') > iw) t = t.slice(0, -1);
+        t += '…';
+      }
+      const cap = s * MM * 0.72;
+      doc.text(t, cx, top + cap, { align: 'center' });
+      top += cap + 1.3;
+    }
+
+    // 4) Descrizione nello spazio rimasto
+    if (o.descrizione && r.descrizione) {
+      const fsD = 6, lh = 2.5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(fsD);
+      doc.setTextColor(51, 65, 85);
+      const maxRighe = Math.floor((bottom - top) / lh);
+      if (maxRighe >= 1) {
+        let righe = doc.splitTextToSize(String(r.descrizione), iw);
+        if (righe.length > maxRighe) {
+          righe = righe.slice(0, maxRighe);
+          let ult = righe[maxRighe - 1];
+          while (ult.length > 1 && doc.getTextWidth(ult + '…') > iw) ult = ult.slice(0, -1);
+          righe[maxRighe - 1] = ult.replace(/\s+$/, '') + '…';
+        }
+        righe.forEach((riga, k) => {
+          doc.text(riga, cx, top + fsD * MM * 0.72 + k * lh, { align: 'center' });
+        });
+      }
+    }
+  }
+
+  // ── Documento etichette ─────────────────────────────────────
+  function creaEtichetteDoc() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const fmtE = FORMATI_ETICHETTA.find(f => f.id === formatoEtichettaId) || FORMATI_ETICHETTA[0];
+    const o = {
+      nome:        document.getElementById('sw-lbl-name').checked,
+      descrizione: document.getElementById('sw-lbl-desc').checked,
+      barcode:     document.getElementById('sw-lbl-barcode').checked,
+      iva:         document.getElementById('sw-lbl-iva').checked,
+      listino:     document.getElementById('lbl-listino').value,
+    };
+
+    const PAGE_W = 210, PAGE_H = 297, MARG = 5;
+    const cols = Math.max(1, Math.floor((PAGE_W - 2 * MARG) / fmtE.w));
+    const rows = Math.max(1, Math.floor((PAGE_H - 2 * MARG) / fmtE.h));
+    const perPag = cols * rows;
+    const x0 = (PAGE_W - cols * fmtE.w) / 2;
+    const y0 = (PAGE_H - rows * fmtE.h) / 2;
+
+    // una etichetta per articolo
+    const items = carrello.slice();
+    const nPag = Math.ceil(items.length / perPag);
+
+    for (let p = 0; p < nPag; p++) {
+      if (p > 0) doc.addPage();
+      const quanti = Math.min(perPag, items.length - p * perPag);
+      const righeUsate = Math.ceil(quanti / cols);
+
+      // linee tratteggiate di taglio (celle attaccate)
+      doc.setDrawColor(150, 150, 150);
+      doc.setLineWidth(0.15);
+      doc.setLineDashPattern([1, 1], 0);
+      for (let c = 0; c <= cols; c++) {
+        const xx = x0 + c * fmtE.w;
+        doc.line(xx, y0, xx, y0 + righeUsate * fmtE.h);
+      }
+      for (let rr = 0; rr <= righeUsate; rr++) {
+        const yy = y0 + rr * fmtE.h;
+        doc.line(x0, yy, x0 + cols * fmtE.w, yy);
+      }
+      doc.setLineDashPattern([], 0);
+
+      for (let k = 0; k < quanti; k++) {
+        const col = k % cols, riga = Math.floor(k / cols);
+        disegnaEtichetta(doc, x0 + col * fmtE.w, y0 + riga * fmtE.h, fmtE.w, fmtE.h, items[p * perPag + k], o);
+      }
+    }
+
+    const dataStr = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+    return { doc, nome: `etichette-prezzi-${dataStr}.pdf` };
+  }
+
+  // ── Genera i PDF selezionati (picking list e/o etichette) ───
+  function generatePDF() {
+    if (carrello.length === 0) return;
+
+    const wantPick = document.getElementById('sw-out-picking').checked;
+    const wantLbl  = document.getElementById('sw-out-labels').checked;
+    if (!wantPick && !wantLbl) return;
+
+    const files = [];
+    try {
+      if (wantPick) files.push(creaPickingDoc());
+      if (wantLbl)  files.push(creaEtichetteDoc());
+    } catch (err) {
+      console.error(err);
+      alert('Errore nella generazione del PDF: ' + err.message);
+      return;
+    }
+
+    // Salva (con piccolo intervallo se sono due file, per non far bloccare il secondo download)
+    files.forEach((f, i) => setTimeout(() => f.doc.save(f.nome), i * 700));
 
     // Reset carrello
     carrello = [];
@@ -2563,6 +2971,8 @@
     const btnDetail = document.getElementById('btn-add-picking-detail');
     if (btnDetail) aggiornaBottoneDettaglio('');
   }
+
+  initOpzioniEtichette();
 </script>
 </body>
 </html>
