@@ -870,7 +870,15 @@
       object-fit: cover;
       display: block;
       background: #000;
+      /* Nascosto finché il primo fotogramma non è pronto: su iPhone il video
+         nasce piccolo e si allarga con uno scatto, così lo scatto non si vede. */
+      opacity: 0;
+      transition: opacity 0.18s ease;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
     }
+
+    #scanner-video.ready { opacity: 1; }
 
     /* viewfinder frame */
     .scanner-frame {
@@ -2429,6 +2437,21 @@
     const video = resetVideoElement();
     video.srcObject = scannerStream;
     await video.play().catch(() => {});
+
+    // Mostra il video solo quando ha già il primo fotogramma e il layout si è assestato
+    let rivelato = false;
+    const rivela = () => {
+      if (rivelato || !video.isConnected) return;
+      rivelato = true;
+      void video.offsetHeight;
+      requestAnimationFrame(() => requestAnimationFrame(() => video.classList.add('ready')));
+    };
+    if ('requestVideoFrameCallback' in video) {
+      video.requestVideoFrameCallback(() => setTimeout(rivela, 80));
+    } else {
+      video.addEventListener('playing', () => setTimeout(rivela, 150), { once: true });
+    }
+    setTimeout(rivela, 900);   // sicurezza: lo mostra comunque
 
     // Inizializza BarcodeDetector (nativo o polyfill)
     try {
