@@ -862,20 +862,16 @@
 
     #scanner-video {
       position: absolute;
-      inset: 0;
+      left: 0; top: 0;
       width: 100%;
       height: 100%;
-      min-width: 100%;
-      min-height: 100%;
       object-fit: cover;
       display: block;
       background: #000;
-      /* Nascosto finché il primo fotogramma non è pronto: su iPhone il video
-         nasce piccolo e si allarga con uno scatto, così lo scatto non si vede. */
+      /* Nascosto finché il primo fotogramma non è pronto e le dimensioni
+         sono state calcolate (su iPhone il video altrimenti nasce piccolo). */
       opacity: 0;
-      transition: opacity 0.18s ease;
-      -webkit-transform: translateZ(0);
-      transform: translateZ(0);
+      transition: opacity 0.15s ease;
     }
 
     #scanner-video.ready { opacity: 1; }
@@ -2385,6 +2381,28 @@
   let lastScannedTime  = 0;
 
   let scannerOpening = false;
+  let scannerToken   = 0;   // cambia a ogni chiusura: annulla aperture ancora in corso
+
+  // Dimensiona il video "a copertura" in pixel precisi, centrato nell'overlay.
+  // Il box ha già le proporzioni vere del video, quindi il browser non deve
+  // ingrandirlo da solo (è lì che su iPhone restava piccolo per qualche istante).
+  function fitScannerVideo() {
+    const v = document.getElementById('scanner-video');
+    const o = document.getElementById('scanner-overlay');
+    if (!v || !o || !v.videoWidth || !v.videoHeight) return;
+    const W = o.clientWidth, H = o.clientHeight;
+    if (!W || !H) return;
+    const sc = Math.max(W / v.videoWidth, H / v.videoHeight);
+    const w = Math.ceil(v.videoWidth  * sc);
+    const h = Math.ceil(v.videoHeight * sc);
+    v.style.objectFit = 'fill';
+    v.style.width  = w + 'px';
+    v.style.height = h + 'px';
+    v.style.left   = Math.round((W - w) / 2) + 'px';
+    v.style.top    = Math.round((H - h) / 2) + 'px';
+  }
+  window.addEventListener('resize', fitScannerVideo);
+  window.addEventListener('orientationchange', () => setTimeout(fitScannerVideo, 250));
 
   // Ricrea l'elemento <video> da zero: su iOS/WebKit un video già usato può
   // restare con dimensioni/layer vecchi e ricomparire rimpicciolito.
@@ -2396,6 +2414,8 @@
     v.setAttribute('webkit-playsinline', '');
     v.muted = true;
     v.autoplay = true;
+    v.addEventListener('loadedmetadata', fitScannerVideo);
+    v.addEventListener('resize', fitScannerVideo);   // cambia il formato (es. rotazione)
     if (old) {
       try { old.pause(); old.srcObject = null; old.removeAttribute('src'); old.load(); } catch (e) {}
       old.replaceWith(v);
@@ -2406,52 +2426,61 @@
   async function openScanner() {
     if (scannerOpening || scannerActive) return;   // evita doppio tap / doppia apertura
     scannerOpening = true;
+    const token   = ++scannerToken;
     const overlay = document.getElementById('scanner-overlay');
 
-    // Toglie il focus dall'input (chiude la tastiera) e riporta la pagina in posizione
+    // Toglie il focus dall'input (chiude la tastiera)
     const ae = document.activeElement;
     if (ae && ae !== document.body && ae.blur) ae.blur();
 
+    // Apre subito la schermata nera dello scanner: risposta immediata al tocco,
+    // mentre la fotocamera si avvia.
+    overlay.classList.add('open');
+    document.getElementById('btn-scan').classList.add('active');
+    resetVideoElement();
+
     // Richiedi permesso fotocamera
+    let stream;
     try {
-      const constraints = {
+      stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: 'environment' },
           width:  { ideal: 1920 },
           height: { ideal: 1080 },
         }
-      };
-      scannerStream = await navigator.mediaDevices.getUserMedia(constraints);
+      });
     } catch (e) {
-      scannerOpening = false;
+      if (token === scannerToken) closeScanner();
       alert('Fotocamera non accessibile: ' + e.message);
       return;
     }
+    // Chiuso nel frattempo (X premuta mentre la fotocamera partiva)
+    if (token !== scannerToken) {
+      stream.getTracks().forEach(t => t.stop());
+      return;
+    }
+    scannerStream = stream;
 
-    // Mostra l'overlay a tutto schermo PRIMA di collegare il video,
-    // così il video viene dimensionato quando è già visibile.
-    overlay.classList.add('open');
-    document.getElementById('btn-scan').classList.add('active');
-    void overlay.offsetHeight;   // forza il layout
-
-    const video = resetVideoElement();
+    const video = document.getElementById('scanner-video');
     video.srcObject = scannerStream;
     await video.play().catch(() => {});
+    if (token !== scannerToken) return;
 
-    // Mostra il video solo quando ha già il primo fotogramma e il layout si è assestato
+    // Mostra il video solo quando ha il primo fotogramma e le dimensioni sono a posto
     let rivelato = false;
     const rivela = () => {
       if (rivelato || !video.isConnected) return;
       rivelato = true;
-      void video.offsetHeight;
+      fitScannerVideo();
       requestAnimationFrame(() => requestAnimationFrame(() => video.classList.add('ready')));
     };
     if ('requestVideoFrameCallback' in video) {
-      video.requestVideoFrameCallback(() => setTimeout(rivela, 80));
+      video.requestVideoFrameCallback(() => { fitScannerVideo(); setTimeout(rivela, 30); });
     } else {
-      video.addEventListener('playing', () => setTimeout(rivela, 150), { once: true });
+      video.addEventListener('playing', () => { fitScannerVideo(); setTimeout(rivela, 60); }, { once: true });
     }
-    setTimeout(rivela, 900);   // sicurezza: lo mostra comunque
+    setTimeout(rivela, 700);   // sicurezza: lo mostra comunque
+    fitScannerVideo();
 
     // Inizializza BarcodeDetector (nativo o polyfill)
     try {
@@ -2476,6 +2505,7 @@
 
     // Controlla disponibilità torch e zoom
     await checkCapabilities();
+    if (token !== scannerToken) return;   // chiuso mentre si avviava
 
     scannerActive = true;
     scannerOpening = false;
@@ -2503,6 +2533,7 @@
   }
 
   function closeScanner() {
+    scannerToken++;
     scannerActive = false;
     scannerOpening = false;
     if (scannerRAF) { cancelAnimationFrame(scannerRAF); scannerRAF = null; }
