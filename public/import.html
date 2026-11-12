@@ -393,8 +393,9 @@
   <div class="card">
     <div class="card-label">02 — Avvia importazione</div>
     <p style="font-size:0.85rem; color:var(--muted); line-height:1.6; margin-bottom:4px;">
-      Tutti i record esistenti del fornitore verranno <strong style="color:var(--danger)">eliminati</strong>
-      e sostituiti con i dati del file caricato.
+      Gli articoli del fornitore <strong>già presenti</strong> (stesso codice) verranno
+      <strong style="color:var(--danger)">sostituiti</strong> con i dati del file. Gli articoli che
+      non sono nel nuovo file <strong>restano nel database</strong> e continuano a essere ricercabili.
     </p>
     <button class="btn-import" id="btn-import" disabled onclick="avviaImport()">
       <span id="btn-label">⚡ Importa listino</span>
@@ -560,25 +561,35 @@
     log('info', `Righe da importare: ${prodottiParsati.length}`);
 
     try {
-      // STEP 1 — Elimina vecchi record
-      log('warn', `Eliminazione vecchi dati di "${fornitoreName}"...`);
-    const { error: delErr } = await sb
-  .from('prodotti')
-  .delete()
-  .eq('fornitore', fornitoreName);
+      // STEP 1 — Sostituisci solo gli articoli presenti nel nuovo file.
+      // Gli articoli del fornitore che NON sono nel file restano nel DB.
+      const codiciFile = [...new Set(prodottiParsati.map(p => p.art))];
 
-console.log('DEL ERROR:', JSON.stringify(delErr));
-console.log('FORNITORE:', fornitoreName);
-console.log('URL:', SUPABASE_URL);
+      const { count: prima, error: cntErr } = await sb
+        .from('prodotti')
+        .select('*', { count: 'exact', head: true })
+        .eq('fornitore', fornitoreName);
+      if (cntErr) throw new Error(`Conteggio fallito: ${cntErr.message}`);
 
-// Ignora l'errore se non c'era nulla da cancellare
-if (delErr && !delErr.message.includes('0 rows')) {
-  throw new Error(`Eliminazione fallita: ${delErr.message}`);
-}
-log('ok', 'Vecchi dati eliminati (o nessun dato precedente) ✓');
+      log('warn', `Sostituzione degli articoli già presenti di "${fornitoreName}" (${codiciFile.length} codici nel file)...`);
 
-      if (delErr) throw new Error(`Eliminazione fallita: ${delErr.message}`);
-      log('ok', 'Vecchi dati eliminati ✓');
+      const DEL_BATCH = 100;   // blocchi piccoli per non superare i limiti di lunghezza dell'URL
+      let sostituiti = 0;
+      for (let i = 0; i < codiciFile.length; i += DEL_BATCH) {
+        const chunk = codiciFile.slice(i, i + DEL_BATCH);
+        const { error: delErr, count } = await sb
+          .from('prodotti')
+          .delete({ count: 'exact' })
+          .eq('fornitore', fornitoreName)
+          .in('art', chunk);
+        if (delErr) throw new Error(`Sostituzione fallita: ${delErr.message}`);
+        sostituiti += count || 0;
+        setProgress(Math.round(((i + chunk.length) / codiciFile.length) * 20));
+      }
+
+      const mantenuti = Math.max(0, (prima || 0) - sostituiti);
+      log('ok', `Articoli sostituiti: ${sostituiti} ✓`);
+      log('info', `Articoli precedenti non presenti nel file, mantenuti: ${mantenuti}`);
       setProgress(20);
 
       // STEP 2 — Inserisci in batch da 500
@@ -597,8 +608,8 @@ log('ok', 'Vecchi dati eliminati (o nessun dato precedente) ✓');
       }
 
       setProgress(100);
-      log('ok', `✅ Importazione completata! ${totale} prodotti caricati.`);
-      showResult('success', '✅', `${totale} prodotti di "${fornitoreName}" importati con successo`);
+      log('ok', `✅ Importazione completata! ${totale} prodotti caricati, ${mantenuti} articoli precedenti mantenuti.`);
+      showResult('success', '✅', `${totale} prodotti di "${fornitoreName}" importati (${mantenuti} articoli precedenti mantenuti)`);
 
     } catch(e) {
       log('error', `ERRORE: ${e.message}`);
