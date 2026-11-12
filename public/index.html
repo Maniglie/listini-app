@@ -861,10 +861,15 @@
     #scanner-overlay.open { display: flex; }
 
     #scanner-video {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
+      min-width: 100%;
+      min-height: 100%;
       object-fit: cover;
       display: block;
+      background: #000;
     }
 
     /* viewfinder frame */
@@ -2371,8 +2376,33 @@
   let lastScanned      = null;
   let lastScannedTime  = 0;
 
+  let scannerOpening = false;
+
+  // Ricrea l'elemento <video> da zero: su iOS/WebKit un video già usato può
+  // restare con dimensioni/layer vecchi e ricomparire rimpicciolito.
+  function resetVideoElement() {
+    const old = document.getElementById('scanner-video');
+    const v = document.createElement('video');
+    v.id = 'scanner-video';
+    v.setAttribute('playsinline', '');
+    v.setAttribute('webkit-playsinline', '');
+    v.muted = true;
+    v.autoplay = true;
+    if (old) {
+      try { old.pause(); old.srcObject = null; old.removeAttribute('src'); old.load(); } catch (e) {}
+      old.replaceWith(v);
+    }
+    return v;
+  }
+
   async function openScanner() {
+    if (scannerOpening || scannerActive) return;   // evita doppio tap / doppia apertura
+    scannerOpening = true;
     const overlay = document.getElementById('scanner-overlay');
+
+    // Toglie il focus dall'input (chiude la tastiera) e riporta la pagina in posizione
+    const ae = document.activeElement;
+    if (ae && ae !== document.body && ae.blur) ae.blur();
 
     // Richiedi permesso fotocamera
     try {
@@ -2385,11 +2415,18 @@
       };
       scannerStream = await navigator.mediaDevices.getUserMedia(constraints);
     } catch (e) {
+      scannerOpening = false;
       alert('Fotocamera non accessibile: ' + e.message);
       return;
     }
 
-    const video = document.getElementById('scanner-video');
+    // Mostra l'overlay a tutto schermo PRIMA di collegare il video,
+    // così il video viene dimensionato quando è già visibile.
+    overlay.classList.add('open');
+    document.getElementById('btn-scan').classList.add('active');
+    void overlay.offsetHeight;   // forza il layout
+
+    const video = resetVideoElement();
     video.srcObject = scannerStream;
     await video.play().catch(() => {});
 
@@ -2402,7 +2439,8 @@
       });
     } catch (e) {
       alert('BarcodeDetector non disponibile: ' + e.message);
-      stopStream();
+      scannerOpening = false;
+      closeScanner();
       return;
     }
 
@@ -2416,9 +2454,8 @@
     // Controlla disponibilità torch e zoom
     await checkCapabilities();
 
-    overlay.classList.add('open');
-    document.getElementById('btn-scan').classList.add('active');
     scannerActive = true;
+    scannerOpening = false;
     scanLoop();
   }
 
@@ -2444,12 +2481,16 @@
 
   function closeScanner() {
     scannerActive = false;
+    scannerOpening = false;
     if (scannerRAF) { cancelAnimationFrame(scannerRAF); scannerRAF = null; }
     stopStream();
     document.getElementById('scanner-overlay').classList.remove('open');
     document.getElementById('btn-scan').classList.remove('active');
-    // Rimetti focus sull'input
-    document.getElementById('search-input').focus();
+    // Focus sull'input solo su PC: su telefono aprirebbe la tastiera e
+    // sposterebbe la pagina, rovinando la riapertura a tutto schermo dello scanner.
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      document.getElementById('search-input').focus();
+    }
   }
 
   function stopStream() {
@@ -2458,7 +2499,12 @@
       scannerStream = null;
     }
     const video = document.getElementById('scanner-video');
-    video.srcObject = null;
+    if (video) {
+      try { video.pause(); } catch (e) {}
+      video.srcObject = null;
+      video.removeAttribute('src');
+      try { video.load(); } catch (e) {}
+    }
   }
 
   function scanLoop() {
