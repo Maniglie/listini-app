@@ -231,6 +231,32 @@
       margin-bottom: 12px;
     }
 
+    /* Filtro per fornitore (appare solo se i risultati vengono da più fornitori) */
+    .filtro-fornitore {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .filtro-fornitore svg { color: var(--accent); flex-shrink: 0; }
+    .filtro-fornitore select {
+      flex: 1;
+      min-width: 0;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;              /* 16px: evita lo zoom automatico su iPhone */
+      font-weight: 500;
+      color: var(--text-primary);
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      outline: none;
+    }
+    .filtro-fornitore select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+
     .results-list { display: flex; flex-direction: column; gap: 6px; }
 
     .result-item {
@@ -861,20 +887,11 @@
     #scanner-overlay.open { display: flex; }
 
     #scanner-video {
-      position: absolute;
-      left: 0; top: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
-      background: #000;
-      /* Nascosto finché il primo fotogramma non è pronto e le dimensioni
-         sono state calcolate (su iPhone il video altrimenti nasce piccolo). */
-      opacity: 0;
-      transition: opacity 0.15s ease;
     }
-
-    #scanner-video.ready { opacity: 1; }
 
     /* viewfinder frame */
     .scanner-frame {
@@ -2195,10 +2212,11 @@
   // ============================================================
   // LISTA RISULTATI
   // ============================================================
-  function showListaRisultati(items) {
-    const content = document.getElementById('main-content');
+  let risultatiCorrenti = [];
+  let filtroFornitore   = '';   // '' = tutti
 
-    const rows = items.map(item => `
+  function righeRisultati(items) {
+    return items.map(item => `
       <div class="result-item" onclick='showDettaglio(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
         <div class="result-art">${esc(item.art || '—')}</div>
         <div class="result-desc">${esc(item.descrizione || '—')}</div>
@@ -2210,11 +2228,45 @@
         <div class="result-price"><span class="currency">€</span>${fmt(item.prezzo)}</div>
       </div>
     `).join('');
+  }
+
+  function showListaRisultati(items) {
+    risultatiCorrenti = items;
+    filtroFornitore   = '';
+    const content = document.getElementById('main-content');
+
+    // Fornitori presenti nei risultati, con il numero di articoli di ciascuno
+    const conteggi = {};
+    items.forEach(it => {
+      const f = (it.fornitore || '').trim() || '—';
+      conteggi[f] = (conteggi[f] || 0) + 1;
+    });
+    const fornitori = Object.keys(conteggi).sort((x, y) => x.localeCompare(y, 'it'));
+
+    const filtroHtml = fornitori.length > 1 ? `
+      <div class="filtro-fornitore">
+        ${ICONS.building}
+        <select id="filtro-fornitore" onchange="filtraPerFornitore(this.value)" aria-label="Filtra per fornitore">
+          <option value="">Tutti i fornitori (${items.length})</option>
+          ${fornitori.map(f => `<option value="${esc(f)}">${esc(f)} (${conteggi[f]})</option>`).join('')}
+        </select>
+      </div>` : '';
 
     content.innerHTML = `
-      <div class="results-count">${items.length} risultati trovati</div>
-      <div class="results-list">${rows}</div>
+      <div class="results-count" id="results-count">${items.length} risultati trovati</div>
+      ${filtroHtml}
+      <div class="results-list" id="results-list">${righeRisultati(items)}</div>
     `;
+  }
+
+  function filtraPerFornitore(valore) {
+    filtroFornitore = valore;
+    const visibili = valore
+      ? risultatiCorrenti.filter(it => ((it.fornitore || '').trim() || '—') === valore)
+      : risultatiCorrenti;
+    document.getElementById('results-count').textContent =
+      visibili.length + (visibili.length === 1 ? ' risultato trovato' : ' risultati trovati');
+    document.getElementById('results-list').innerHTML = righeRisultati(visibili);
   }
 
   // ============================================================
@@ -2380,107 +2432,27 @@
   let lastScanned      = null;
   let lastScannedTime  = 0;
 
-  let scannerOpening = false;
-  let scannerToken   = 0;   // cambia a ogni chiusura: annulla aperture ancora in corso
-
-  // Dimensiona il video "a copertura" in pixel precisi, centrato nell'overlay.
-  // Il box ha già le proporzioni vere del video, quindi il browser non deve
-  // ingrandirlo da solo (è lì che su iPhone restava piccolo per qualche istante).
-  function fitScannerVideo() {
-    const v = document.getElementById('scanner-video');
-    const o = document.getElementById('scanner-overlay');
-    if (!v || !o || !v.videoWidth || !v.videoHeight) return;
-    const W = o.clientWidth, H = o.clientHeight;
-    if (!W || !H) return;
-    const sc = Math.max(W / v.videoWidth, H / v.videoHeight);
-    const w = Math.ceil(v.videoWidth  * sc);
-    const h = Math.ceil(v.videoHeight * sc);
-    v.style.objectFit = 'fill';
-    v.style.width  = w + 'px';
-    v.style.height = h + 'px';
-    v.style.left   = Math.round((W - w) / 2) + 'px';
-    v.style.top    = Math.round((H - h) / 2) + 'px';
-  }
-  window.addEventListener('resize', fitScannerVideo);
-  window.addEventListener('orientationchange', () => setTimeout(fitScannerVideo, 250));
-
-  // Ricrea l'elemento <video> da zero: su iOS/WebKit un video già usato può
-  // restare con dimensioni/layer vecchi e ricomparire rimpicciolito.
-  function resetVideoElement() {
-    const old = document.getElementById('scanner-video');
-    const v = document.createElement('video');
-    v.id = 'scanner-video';
-    v.setAttribute('playsinline', '');
-    v.setAttribute('webkit-playsinline', '');
-    v.muted = true;
-    v.autoplay = true;
-    v.addEventListener('loadedmetadata', fitScannerVideo);
-    v.addEventListener('resize', fitScannerVideo);   // cambia il formato (es. rotazione)
-    if (old) {
-      try { old.pause(); old.srcObject = null; old.removeAttribute('src'); old.load(); } catch (e) {}
-      old.replaceWith(v);
-    }
-    return v;
-  }
-
   async function openScanner() {
-    if (scannerOpening || scannerActive) return;   // evita doppio tap / doppia apertura
-    scannerOpening = true;
-    const token   = ++scannerToken;
     const overlay = document.getElementById('scanner-overlay');
 
-    // Toglie il focus dall'input (chiude la tastiera)
-    const ae = document.activeElement;
-    if (ae && ae !== document.body && ae.blur) ae.blur();
-
-    // Apre subito la schermata nera dello scanner: risposta immediata al tocco,
-    // mentre la fotocamera si avvia.
-    overlay.classList.add('open');
-    document.getElementById('btn-scan').classList.add('active');
-    resetVideoElement();
-
     // Richiedi permesso fotocamera
-    let stream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
+      const constraints = {
         video: {
           facingMode: { ideal: 'environment' },
           width:  { ideal: 1920 },
           height: { ideal: 1080 },
         }
-      });
+      };
+      scannerStream = await navigator.mediaDevices.getUserMedia(constraints);
     } catch (e) {
-      if (token === scannerToken) closeScanner();
       alert('Fotocamera non accessibile: ' + e.message);
       return;
     }
-    // Chiuso nel frattempo (X premuta mentre la fotocamera partiva)
-    if (token !== scannerToken) {
-      stream.getTracks().forEach(t => t.stop());
-      return;
-    }
-    scannerStream = stream;
 
     const video = document.getElementById('scanner-video');
     video.srcObject = scannerStream;
     await video.play().catch(() => {});
-    if (token !== scannerToken) return;
-
-    // Mostra il video solo quando ha il primo fotogramma e le dimensioni sono a posto
-    let rivelato = false;
-    const rivela = () => {
-      if (rivelato || !video.isConnected) return;
-      rivelato = true;
-      fitScannerVideo();
-      requestAnimationFrame(() => requestAnimationFrame(() => video.classList.add('ready')));
-    };
-    if ('requestVideoFrameCallback' in video) {
-      video.requestVideoFrameCallback(() => { fitScannerVideo(); setTimeout(rivela, 30); });
-    } else {
-      video.addEventListener('playing', () => { fitScannerVideo(); setTimeout(rivela, 60); }, { once: true });
-    }
-    setTimeout(rivela, 700);   // sicurezza: lo mostra comunque
-    fitScannerVideo();
 
     // Inizializza BarcodeDetector (nativo o polyfill)
     try {
@@ -2491,8 +2463,7 @@
       });
     } catch (e) {
       alert('BarcodeDetector non disponibile: ' + e.message);
-      scannerOpening = false;
-      closeScanner();
+      stopStream();
       return;
     }
 
@@ -2505,10 +2476,10 @@
 
     // Controlla disponibilità torch e zoom
     await checkCapabilities();
-    if (token !== scannerToken) return;   // chiuso mentre si avviava
 
+    overlay.classList.add('open');
+    document.getElementById('btn-scan').classList.add('active');
     scannerActive = true;
-    scannerOpening = false;
     scanLoop();
   }
 
@@ -2533,18 +2504,13 @@
   }
 
   function closeScanner() {
-    scannerToken++;
     scannerActive = false;
-    scannerOpening = false;
     if (scannerRAF) { cancelAnimationFrame(scannerRAF); scannerRAF = null; }
     stopStream();
     document.getElementById('scanner-overlay').classList.remove('open');
     document.getElementById('btn-scan').classList.remove('active');
-    // Focus sull'input solo su PC: su telefono aprirebbe la tastiera e
-    // sposterebbe la pagina, rovinando la riapertura a tutto schermo dello scanner.
-    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-      document.getElementById('search-input').focus();
-    }
+    // Rimetti focus sull'input
+    document.getElementById('search-input').focus();
   }
 
   function stopStream() {
@@ -2553,12 +2519,7 @@
       scannerStream = null;
     }
     const video = document.getElementById('scanner-video');
-    if (video) {
-      try { video.pause(); } catch (e) {}
-      video.srcObject = null;
-      video.removeAttribute('src');
-      try { video.load(); } catch (e) {}
-    }
+    video.srcObject = null;
   }
 
   function scanLoop() {
